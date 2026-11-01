@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,6 +11,8 @@ from src.services import storage
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
+    logging.getLogger("uvicorn.access").disabled = True
     await asyncio.to_thread(storage.ensure_bucket)
     yield
 
