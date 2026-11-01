@@ -16,5 +16,9 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 200
 
+    # Output size must match EMBEDDING_DIM in src/db/models.py.
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_batch_size: int = 64
+
 
 settings = Settings()
