@@ -26,5 +26,9 @@ class Settings(BaseSettings):
     llm_model: str
     llm_temperature: float
 
+    # Retrieval: chunks sent to the LLM, and the lowest cosine similarity that counts as relevant.
+    top_k: int
+    min_score: float
+
 
 settings = Settings()
