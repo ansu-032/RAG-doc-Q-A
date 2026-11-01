@@ -2,6 +2,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Every value comes from .env; there are no defaults in code."""
+
     model_config = SettingsConfigDict(env_file=".env")
 
     database_url: str
@@ -9,16 +11,20 @@ class Settings(BaseSettings):
     minio_endpoint: str
     minio_access_key: str
     minio_secret_key: str
-    minio_bucket: str = "documents"
+    minio_bucket: str
 
     allowed_mime_types: list[str]
 
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
+    chunk_size: int
+    chunk_overlap: int
 
     # Output size must match EMBEDDING_DIM in src/db/models.py.
-    embedding_model: str = "BAAI/bge-small-en-v1.5"
-    embedding_batch_size: int = 64
+    embedding_model: str
+    embedding_batch_size: int
+
+    groq_api_key: str
+    llm_model: str
+    llm_temperature: float
 
 
 settings = Settings()
