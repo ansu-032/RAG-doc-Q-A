@@ -20,10 +20,7 @@ splitter = RecursiveCharacterTextSplitter(
 @dataclass
 class TextChunk:
     chunk_index: int
-    page_number: int | None
     content: str
-    char_count: int
-    word_count: int
 
 
 def split_pages(pages: list[Page]) -> list[TextChunk]:
@@ -33,13 +30,5 @@ def split_pages(pages: list[Page]) -> list[TextChunk]:
             piece = piece.strip()
             if not piece:
                 continue
-            chunks.append(
-                TextChunk(
-                    chunk_index=len(chunks),
-                    page_number=page.page_number,
-                    content=piece,
-                    char_count=len(piece),
-                    word_count=len(piece.split()),
-                )
-            )
+            chunks.append(TextChunk(chunk_index=len(chunks), content=piece))
     return chunks

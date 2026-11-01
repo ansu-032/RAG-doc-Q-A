@@ -1,19 +1,23 @@
 import uuid
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.deps import get_db
 from src.schemas.file import FileOut
-from src.services import file_service
+from src.services import file_service, processing
 
 router = APIRouter(tags=["files"])
 
 
 @router.post("/file", response_model=FileOut, status_code=201)
-async def upload_file(file: UploadFile, db: AsyncSession = Depends(get_db)):
-    return await file_service.upload_file(db, file)
+async def upload_file(
+    file: UploadFile, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)
+):
+    record = await file_service.upload_file(db, file)
+    background_tasks.add_task(processing.process_file, record.id)
+    return record
 
 
 @router.get("/file/{file_id}", response_model=FileOut)
