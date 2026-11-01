@@ -61,7 +61,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("chunk_index", sa.Integer(), nullable=False),
-        sa.Column("page_number", sa.Integer(), nullable=False),
+        sa.Column("page_number", sa.Integer(), nullable=True),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("char_count", sa.Integer(), nullable=False),
         sa.Column("word_count", sa.Integer(), nullable=False),

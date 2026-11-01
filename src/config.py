@@ -13,5 +13,8 @@ class Settings(BaseSettings):
 
     allowed_mime_types: list[str]
 
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+
 
 settings = Settings()
