@@ -18,7 +18,7 @@ async def ask_question(file_id: uuid.UUID, query: QueryIn, db: AsyncSession = De
         raise HTTPException(409, f"File is not ready to query (status: {record.status})")
 
     # An LLM reads the question first: where it should go, and what it really asks.
-    decision = await question_router.route(query.question, record.original_filename, record.summary)
+    decision = await question_router.route(query.question, record.original_filename)
     question = decision.rewritten_question
     respond = partial(
         QueryOut,
@@ -29,13 +29,7 @@ async def ask_question(file_id: uuid.UUID, query: QueryIn, db: AsyncSession = De
         rewritten_question=question,
     )
 
-    # Broad questions need the whole document, not the few closest chunks.
-    if decision.route == "document_broad" and record.summary:
-        answer = await generation.answer_from_summary(question, record.summary)
-        if answer != generation.NOT_FOUND:
-            return respond(answer_source="document", answer=answer, sources=[], web_sources=[])
-
-    # Specific questions, and broad ones the summary could not answer (or with no summary yet).
+    # Specific and broad questions: search the document with the rewritten question.
     if decision.route != "general":
         hits = await retrieval.search(db, record.id, question)
         # With no relevant chunks, answer() returns "not found" without calling the LLM.

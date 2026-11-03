@@ -26,9 +26,9 @@ class Settings(BaseSettings):
     llm_model: str
     llm_temperature: float
 
-    # Both use GROQ_API_KEY; each Groq model has its own rate limit, so they do not slow answers down.
-    router_model: str  # reads the question first: picks a route and rewrites it clearly
-    summary_model: str  # summarises each file once at upload, for broad questions
+    # Reads the question first: picks a route and rewrites it clearly. Uses GROQ_API_KEY;
+    # each Groq model has its own rate limit, so it does not slow answers down.
+    router_model: str
 
     # Fallback when the document has no answer: a second Groq key and a model that can search the web.
     general_groq_api_key: str

@@ -130,6 +130,7 @@ const Components = (() => {
               <svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
               </svg>
+              Grounded Sources &amp; Evidence (${sources.length})
               Grounded Document Sources (${sources.length})
             </span>
             <span class="text-[11px] text-slate-400 font-normal">Click to expand chunks</span>
@@ -137,19 +138,18 @@ const Components = (() => {
           
           <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
             ${sources
-              .map(
-                (src) => `
+        .map(
+          (src) => `
               <div id="src-${messageId}-${src.number}" class="source-card p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 text-xs text-slate-700 dark:text-slate-300 transition-all">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
                     <span class="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-[10px]">#${src.number}</span>
                     Chunk ${src.chunk_index}
                   </span>
-                  <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                    src.score >= 0.7
-                      ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
-                      : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                  }">
+                  <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${src.score >= 0.7
+              ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
+              : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+            }">
                     Score: ${(src.score * 100).toFixed(1)}%
                   </span>
                 </div>
@@ -158,8 +158,8 @@ const Components = (() => {
                 </p>
               </div>
             `
-              )
-              .join("")}
+        )
+        .join("")}
           </div>
         </details>
       </div>
@@ -187,8 +187,8 @@ const Components = (() => {
           
           <div class="mt-2.5 space-y-2">
             ${webSources
-              .map(
-                (src, i) => `
+        .map(
+          (src, i) => `
               <a href="${escapeHtml(src.url)}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:border-blue-300 dark:hover:border-blue-800 text-xs transition-colors group/link">
                 <div class="flex items-center gap-2 overflow-hidden">
                   <span class="w-5 h-5 rounded bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0">
@@ -208,8 +208,8 @@ const Components = (() => {
                 </svg>
               </a>
             `
-              )
-              .join("")}
+        )
+        .join("")}
           </div>
         </details>
       </div>
@@ -308,11 +308,10 @@ const Components = (() => {
           </div>
           <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1 px-1">
             <span>${timeFormatted}</span>
-            ${
-              msg.telemetry
-                ? `<span class="font-mono text-slate-500 dark:text-slate-400">⚡ ${msg.telemetry}</span>`
-                : ""
-            }
+            ${msg.telemetry
+        ? `<span class="font-mono text-slate-500 dark:text-slate-400">⚡ ${msg.telemetry}</span>`
+        : ""
+      }
           </div>
         </div>
       </div>
@@ -327,10 +326,9 @@ const Components = (() => {
     const ext = file.file_extension ? file.file_extension.toUpperCase() : "DOC";
 
     return `
-      <div class="p-4 rounded-xl border transition-all ${
-        isActive
-          ? "border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-sm"
-          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
+      <div class="p-4 rounded-xl border transition-all ${isActive
+        ? "border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-sm"
+        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
       }">
         <div class="flex items-start justify-between gap-3 mb-2">
           <div class="flex items-center gap-2.5 overflow-hidden">
@@ -359,25 +357,23 @@ const Components = (() => {
           </div>
         </div>
 
-        ${
-          file.error_message
-            ? `<div class="p-2 mb-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded text-red-600 dark:text-red-400 text-xs">
+        ${file.error_message
+        ? `<div class="p-2 mb-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded text-red-600 dark:text-red-400 text-xs">
                 ${escapeHtml(file.error_message)}
                </div>`
-            : ""
-        }
+        : ""
+      }
 
         <div class="flex items-center justify-between pt-1 gap-2">
           <button 
             type="button" 
             onclick="App.selectFile('${file.id}')"
-            class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
-              isActive
-                ? "bg-indigo-600 text-white shadow-sm"
-                : isReady
-                ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-600 hover:text-white"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-            }"
+            class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${isActive
+        ? "bg-indigo-600 text-white shadow-sm"
+        : isReady
+          ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-600 hover:text-white"
+          : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+      }"
             ${!isReady && !isActive ? 'disabled title="Document must be ready before querying"' : ""}
           >
             ${isActive ? "Active in Chat ✓" : "Chat with this File"}
@@ -495,60 +491,55 @@ const Components = (() => {
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-slate-700 dark:text-slate-300">
             ${runs
-              .map((r) => {
-                const isQuery = r.operation === "query";
-                const isSuccess = r.success;
+        .map((r) => {
+          const isQuery = r.operation === "query";
+          const isSuccess = r.success;
 
-                return `
+          return `
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                   <td class="py-2.5 px-4 font-sans text-slate-400 text-[11px] whitespace-nowrap">
                     ${formatDate(r.created_at)}
                   </td>
                   <td class="py-2.5 px-4 whitespace-nowrap">
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      isQuery
-                        ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
-                        : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                    }">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isQuery
+              ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
+              : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+            }">
                       ${r.operation}
                     </span>
                   </td>
                   <td class="py-2.5 px-4 whitespace-nowrap">
-                    ${
-                      isSuccess
-                        ? '<span class="text-green-600 dark:text-green-400 font-bold">✓ OK</span>'
-                        : '<span class="text-red-500 font-bold">✗ ERR</span>'
-                    }
+                    ${isSuccess
+              ? '<span class="text-green-600 dark:text-green-400 font-bold">✓ OK</span>'
+              : '<span class="text-red-500 font-bold">✗ ERR</span>'
+            }
                   </td>
                   <td class="py-2.5 px-4 font-sans text-xs max-w-xs truncate" title="${escapeHtml(r.question || r.error_message || "")}">
-                    ${
-                      isQuery
-                        ? escapeHtml(r.question || "-")
-                        : `Ingested ${r.chunks_processed ?? "-"} chunks`
-                    }
+                    ${isQuery
+              ? escapeHtml(r.question || "-")
+              : `Ingested ${r.chunks_processed ?? "-"} chunks`
+            }
                     ${r.error_message ? `<div class="text-red-500 text-[10px] font-mono">${escapeHtml(r.error_message)}</div>` : ""}
                   </td>
                   <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                     ${r.total_ms} ms
                   </td>
                   <td class="py-2.5 px-4 text-[11px] text-slate-500 whitespace-nowrap">
-                    ${
-                      isQuery
-                        ? `Retr: <span class="text-indigo-600 dark:text-indigo-400">${r.retrieval_ms ?? "-"}ms</span> · LLM: <span class="text-violet-600 dark:text-violet-400">${r.generation_ms ?? "-"}ms</span>`
-                        : `Extr: ${r.extraction_ms ?? "-"}ms · Embed: ${r.embedding_ms ?? "-"}ms`
-                    }
+                    ${isQuery
+              ? `Retr: <span class="text-indigo-600 dark:text-indigo-400">${r.retrieval_ms ?? "-"}ms</span> · LLM: <span class="text-violet-600 dark:text-violet-400">${r.generation_ms ?? "-"}ms</span>`
+              : `Extr: ${r.extraction_ms ?? "-"}ms · Embed: ${r.embedding_ms ?? "-"}ms`
+            }
                   </td>
                   <td class="py-2.5 px-4 text-[11px] whitespace-nowrap">
-                    ${
-                      isQuery
-                        ? `${r.input_tokens ? r.input_tokens + " in / " + (r.output_tokens || 0) + " out" : r.chunks_retrieved ? r.chunks_retrieved + " chunks" : "-"}`
-                        : `${r.chunks_processed ? r.chunks_processed + " chunks" : "-"}`
-                    }
+                    ${isQuery
+              ? `${r.input_tokens ? r.input_tokens + " in / " + (r.output_tokens || 0) + " out" : r.chunks_retrieved ? r.chunks_retrieved + " chunks" : "-"}`
+              : `${r.chunks_processed ? r.chunks_processed + " chunks" : "-"}`
+            }
                   </td>
                 </tr>
               `;
-              })
-              .join("")}
+        })
+        .join("")}
           </tbody>
         </table>
       </div>

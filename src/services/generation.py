@@ -22,20 +22,6 @@ prompt = ChatPromptTemplate.from_messages(
 )
 
 
-summary_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You answer questions about a document using ONLY its summary below.\n"
-            "- Do not use outside knowledge, and do not guess.\n"
-            f"- If the summary does not contain the answer, reply exactly: {NOT_FOUND}\n\n"
-            "Summary:\n{summary}",
-        ),
-        ("human", "{question}"),
-    ]
-)
-
-
 @lru_cache
 def get_llm() -> ChatGroq:
     return ChatGroq(
@@ -51,10 +37,4 @@ async def answer(question: str, passages: list[str]) -> str:
         return NOT_FOUND
     context = "\n\n".join(f"[{i}] {text}" for i, text in enumerate(passages, start=1))
     message = await (prompt | get_llm()).ainvoke({"context": context, "question": question})
-    return message.content.strip()
-
-
-async def answer_from_summary(question: str, summary: str) -> str:
-    """Answer a broad question (overview, key points) from the file's whole-document summary."""
-    message = await (summary_prompt | get_llm()).ainvoke({"summary": summary, "question": question})
     return message.content.strip()
