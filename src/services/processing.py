@@ -9,6 +9,7 @@ from src.services import storage
 from src.services.chunking import split_pages
 from src.services.embeddings import embed_passages
 from src.services.extraction import extract_text
+from src.services.summary import summarize
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -43,6 +44,14 @@ async def process_file(file_id: uuid.UUID) -> None:
             record.processed_at = datetime.datetime.now(datetime.timezone.utc)
             await db.commit()
             logger.info("Processed %s: %d pages, %d chunks", file_id, len(pages), len(chunks))
+
+            # For broad questions. The file is already usable, so a failure here is not fatal.
+            try:
+                record.summary = await summarize([c.content for c in chunks])
+                await db.commit()
+            except Exception:
+                await db.rollback()
+                logger.exception("Summary failed for %s", file_id)
         except Exception as e:
             await db.rollback()
             record.status = "failed"

@@ -28,6 +28,9 @@ class QueryOut(BaseModel):
     file_id: uuid.UUID
     filename: str
     question: str
+    # What the router decided, and the question as it rewrote it (used for search and answering).
+    route: Literal["document_specific", "document_broad", "general"]
+    rewritten_question: str
     # document: from the file's chunks; web: the general model searched the web; llm: its own knowledge.
     answer_source: Literal["document", "web", "llm", "none"]
     answer: str
