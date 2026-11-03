@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     llm_model: str
     llm_temperature: float
 
+    # Fallback when the document has no answer: a second Groq key and a model that can search the web.
+    general_groq_api_key: str
+    general_llm_model: str
+
     # Retrieval: chunks sent to the LLM, and the lowest cosine similarity that counts as relevant.
     top_k: int
     min_score: float
