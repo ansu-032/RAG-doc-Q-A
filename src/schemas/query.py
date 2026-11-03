@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -16,9 +17,19 @@ class Source(BaseModel):
     content: str
 
 
+class WebSource(BaseModel):
+    """A web page the general model searched or opened."""
+
+    title: str
+    url: str
+
+
 class QueryOut(BaseModel):
     file_id: uuid.UUID
     filename: str
     question: str
+    # document: from the file's chunks; web: the general model searched the web; llm: its own knowledge.
+    answer_source: Literal["document", "web", "llm", "none"]
     answer: str
     sources: list[Source]
+    web_sources: list[WebSource]
