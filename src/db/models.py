@@ -149,6 +149,16 @@ class ModelPerformance(Base):
     avg_similarity: Mapped[float | None] = mapped_column(REAL)
     answer_found: Mapped[bool | None] = mapped_column(Boolean)
 
+    # From the LLM reply; the *_ms timings are measured on Groq's servers.
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    reasoning_tokens: Mapped[int | None] = mapped_column(Integer)
+    llm_queue_ms: Mapped[int | None] = mapped_column(Integer)
+    llm_prompt_ms: Mapped[int | None] = mapped_column(Integer)
+    llm_completion_ms: Mapped[int | None] = mapped_column(Integer)
+    # "length" means the answer was cut off.
+    finish_reason: Mapped[str | None] = mapped_column(Text)
+
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

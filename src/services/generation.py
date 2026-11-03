@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 
@@ -31,10 +32,13 @@ def get_llm() -> ChatGroq:
     )
 
 
-async def answer(question: str, passages: list[str]) -> str:
-    """Answer from the given passages; passage i is cited as [i+1]."""
+async def answer(question: str, passages: list[str]) -> tuple[str, AIMessage | None]:
+    """Answer from the given passages; passage i is cited as [i+1].
+
+    Also returns the raw LLM reply (token usage, timings), or None when the LLM was not called.
+    """
     if not passages:
-        return NOT_FOUND
+        return NOT_FOUND, None
     context = "\n\n".join(f"[{i}] {text}" for i, text in enumerate(passages, start=1))
     message = await (prompt | get_llm()).ainvoke({"context": context, "question": question})
-    return message.content.strip()
+    return message.content.strip(), message

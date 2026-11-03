@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.middleware import log_requests
-from src.routes import files, query
+from src.routes import files, performance, query
 from src.services import storage
 
 
@@ -21,3 +21,4 @@ app = FastAPI(title="RAG Document Q&A", lifespan=lifespan)
 app.middleware("http")(log_requests)
 app.include_router(files.router, prefix="/api/v1")
 app.include_router(query.router, prefix="/api/v1")
+app.include_router(performance.router, prefix="/api/v1")
