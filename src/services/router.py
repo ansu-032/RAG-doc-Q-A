@@ -7,6 +7,7 @@ from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field
 
 from src.config import settings
+from src.schemas.query import ChatTurn
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -24,14 +25,32 @@ prompt = ChatPromptTemplate.from_messages(
             "key or important points, main parts, or 'explain this'.\n"
             "- general: clearly unrelated to the document, e.g. other topics, news or current events.\n"
             "Words like 'this', 'here', 'it', 'the project' or 'the paper' mean the document. "
-            "If unsure, pick document_specific.\n\n"
-            "Also rewrite the question as one clear, complete English question: fix typos and "
-            "short forms (e.g. 'imp' means 'important'), keep its meaning, keep names and terms "
-            "as the user wrote them (they may be names from the document), and do not add facts.",
+            "Asking for an opinion or evaluation of the document (is it useful, good, does it "
+            "work) is document_broad. If unsure, pick document_specific.\n\n"
+            "Recent conversation, oldest first (may be empty):\n{history}\n\n"
+            "Also rewrite the question as one clear, complete English question that makes sense "
+            "without the conversation: replace words like 'this college', 'he', 'it' or 'that' "
+            "with what they refer to in the conversation, fix typos and short forms (e.g. 'imp' "
+            "means 'important'), keep its meaning, keep names and terms as the user wrote them "
+            "(they may be names from the document), and add no facts beyond those references.",
         ),
         ("human", "{question}"),
     ]
 )
+
+# Only the router sees the history, so this caps the only extra prompt size it adds.
+HISTORY_MAX_MESSAGES = 6  # 3 question/answer turns
+HISTORY_MAX_CHARS = 300
+
+
+def format_history(history: list[ChatTurn]) -> str:
+    lines = []
+    for turn in history[-HISTORY_MAX_MESSAGES:]:
+        text = " ".join(turn.content.split())
+        if len(text) > HISTORY_MAX_CHARS:
+            text = text[:HISTORY_MAX_CHARS] + "…"
+        lines.append(f"{turn.role}: {text}")
+    return "\n".join(lines) or "(none)"
 
 
 class RouteDecision(BaseModel):
@@ -46,10 +65,12 @@ def get_router():
     return prompt | llm.with_structured_output(RouteDecision, method="json_schema", strict=True)
 
 
-async def route(question: str, filename: str) -> RouteDecision:
+async def route(question: str, filename: str, history: list[ChatTurn]) -> RouteDecision:
     """Decide where the question goes, and rewrite it clearly for retrieval and answering."""
     try:
-        return await get_router().ainvoke({"question": question, "filename": filename})
+        return await get_router().ainvoke(
+            {"question": question, "filename": filename, "history": format_history(history)}
+        )
     except Exception:
         # Any failure (API error, bad output): the document is the safest default.
         logger.exception("Router failed, using document_specific")

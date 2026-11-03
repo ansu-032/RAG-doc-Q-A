@@ -321,6 +321,17 @@ const App = (() => {
     input.value = "";
     input.style.height = "auto";
 
+    // Last 3 question/answer turns, taken before this question is added, so the
+    // backend can understand follow-ups like "where is this college?". Error
+    // messages are skipped; long answers are cut (the backend cuts them again).
+    const history = State.getActiveChatHistory()
+      .filter((m) => !(m.sender === "assistant" && (m.text || "").startsWith("**Error:**")))
+      .slice(-6)
+      .map((m) => ({
+        role: m.sender === "user" ? "user" : "assistant",
+        content: (m.text || "").slice(0, 300),
+      }));
+
     // Add user message to state
     State.addChatMessage(activeFile.id, {
       sender: "user",
@@ -350,7 +361,7 @@ const App = (() => {
 
     const startTime = performance.now();
     try {
-      const result = await Api.askQuestion(activeFile.id, question);
+      const result = await Api.askQuestion(activeFile.id, question, history);
       const durationMs = Math.round(performance.now() - startTime);
 
       let telemetry = `${durationMs}ms`;

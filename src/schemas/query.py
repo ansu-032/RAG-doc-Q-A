@@ -4,8 +4,17 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class ChatTurn(BaseModel):
+    """One earlier message in the chat, sent by the frontend so follow-up questions make sense."""
+
+    role: Literal["user", "assistant"]
+    content: str
+
+
 class QueryIn(BaseModel):
     question: str = Field(min_length=1)
+    # Oldest first. The router trims it again, so a client cannot send a huge prompt.
+    history: list[ChatTurn] = Field(default_factory=list)
 
 
 class Source(BaseModel):

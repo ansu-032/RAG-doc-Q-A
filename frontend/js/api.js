@@ -125,10 +125,10 @@ const Api = (() => {
     /**
      * Query a specific document with natural language question
      */
-    async askQuestion(fileId, question) {
+    async askQuestion(fileId, question, history = []) {
       return await request(`/query?file_id=${encodeURIComponent(fileId)}`, {
         method: "POST",
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, history }),
       });
     },
 

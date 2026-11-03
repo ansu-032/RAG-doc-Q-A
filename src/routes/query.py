@@ -18,7 +18,7 @@ async def ask_question(file_id: uuid.UUID, query: QueryIn, db: AsyncSession = De
         raise HTTPException(409, f"File is not ready to query (status: {record.status})")
 
     # An LLM reads the question first: where it should go, and what it really asks.
-    decision = await question_router.route(query.question, record.original_filename)
+    decision = await question_router.route(query.question, record.original_filename, query.history)
     question = decision.rewritten_question
     respond = partial(
         QueryOut,
