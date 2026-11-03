@@ -130,7 +130,7 @@ const Components = (() => {
               <svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
               </svg>
-              Grounded Sources &amp; Evidence (${sources.length})
+              Grounded Document Sources (${sources.length})
             </span>
             <span class="text-[11px] text-slate-400 font-normal">Click to expand chunks</span>
           </summary>
@@ -167,6 +167,56 @@ const Components = (() => {
   }
 
   /**
+   * Render web search sources when falling back to the general model
+   */
+  function renderWebSourcesList(webSources, messageId) {
+    if (!webSources || webSources.length === 0) return "";
+
+    return `
+      <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
+        <details class="group" open>
+          <summary class="flex items-center justify-between cursor-pointer text-xs font-semibold text-blue-600 dark:text-blue-400 select-none">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+              Referenced Web Sources (${webSources.length})
+            </span>
+            <span class="text-[11px] text-slate-400 font-normal">Live search results</span>
+          </summary>
+          
+          <div class="mt-2.5 space-y-2">
+            ${webSources
+              .map(
+                (src, i) => `
+              <a href="${escapeHtml(src.url)}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:border-blue-300 dark:hover:border-blue-800 text-xs transition-colors group/link">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <span class="w-5 h-5 rounded bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0">
+                    ${i + 1}
+                  </span>
+                  <div class="truncate">
+                    <span class="font-medium text-slate-800 dark:text-slate-200 group-hover/link:text-blue-600 dark:group-hover/link:text-blue-400 transition-colors block truncate">
+                      ${escapeHtml(src.title || src.url)}
+                    </span>
+                    <span class="text-[10px] text-slate-400 truncate block font-mono">
+                      ${escapeHtml(src.url)}
+                    </span>
+                  </div>
+                </div>
+                <svg class="w-3.5 h-3.5 text-slate-400 group-hover/link:text-blue-500 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+            `
+              )
+              .join("")}
+          </div>
+        </details>
+      </div>
+    `;
+  }
+
+  /**
    * Render individual chat message
    */
   function renderChatMessage(msg) {
@@ -191,6 +241,56 @@ const Components = (() => {
       `;
     }
 
+    // Determine answer origin badge
+    let sourceBadge = "";
+    if (msg.answer_source === "document") {
+      sourceBadge = `
+        <div class="mb-2.5">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+            <svg class="w-3 h-3 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Grounded in Document
+          </span>
+        </div>
+      `;
+    } else if (msg.answer_source === "web") {
+      sourceBadge = `
+        <div class="mb-2.5">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60" title="Not found in document; answered via live Web Search">
+            <svg class="w-3 h-3 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+            </svg>
+            Web Search Fallback
+          </span>
+          <span class="text-[10px] text-slate-400 ml-1.5">Not found in document</span>
+        </div>
+      `;
+    } else if (msg.answer_source === "llm") {
+      sourceBadge = `
+        <div class="mb-2.5">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60" title="Not found in document; answered from general AI knowledge">
+            <svg class="w-3 h-3 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            General AI Knowledge
+          </span>
+          <span class="text-[10px] text-slate-400 ml-1.5">Not found in document</span>
+        </div>
+      `;
+    } else if (msg.answer_source === "none") {
+      sourceBadge = `
+        <div class="mb-2.5">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+            <svg class="w-3 h-3 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            Web Search Unavailable
+          </span>
+        </div>
+      `;
+    }
+
     // Assistant message
     return `
       <div class="flex items-start gap-3 mb-6">
@@ -199,10 +299,12 @@ const Components = (() => {
         </div>
         <div class="max-w-[90%] md:max-w-[80%] flex-1">
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl rounded-tl-sm p-4 shadow-sm text-sm text-slate-800 dark:text-slate-100">
+            ${sourceBadge}
             <div class="prose-answer">
               ${renderMarkdown(msg.text)}
             </div>
             ${renderSourcesList(msg.sources, msg.id)}
+            ${renderWebSourcesList(msg.web_sources, msg.id)}
           </div>
           <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1 px-1">
             <span>${timeFormatted}</span>
@@ -460,6 +562,7 @@ const Components = (() => {
     renderStatusBadge,
     renderMarkdown,
     renderSourcesList,
+    renderWebSourcesList,
     renderChatMessage,
     renderFileCard,
     renderPerformanceSummary,

@@ -354,8 +354,13 @@ const App = (() => {
       const durationMs = Math.round(performance.now() - startTime);
 
       let telemetry = `${durationMs}ms`;
-      if (result.sources && result.sources.length > 0) {
-        telemetry += ` · ${result.sources.length} sources (Top: ${(result.sources[0].score * 100).toFixed(0)}%)`;
+      if (result.answer_source === "web") {
+        const webCount = result.web_sources ? result.web_sources.length : 0;
+        telemetry += ` · 🌐 Web Search (${webCount} link${webCount === 1 ? "" : "s"})`;
+      } else if (result.answer_source === "llm") {
+        telemetry += ` · 🤖 General AI Knowledge`;
+      } else if (result.sources && result.sources.length > 0) {
+        telemetry += ` · 📄 Document Grounded (${result.sources.length} sources, Top: ${(result.sources[0].score * 100).toFixed(0)}%)`;
       }
 
       // Remove loading indicator
@@ -366,7 +371,9 @@ const App = (() => {
       State.addChatMessage(activeFile.id, {
         sender: "assistant",
         text: result.answer,
+        answer_source: result.answer_source || "document",
         sources: result.sources || [],
+        web_sources: result.web_sources || [],
         telemetry,
       });
     } catch (err) {

@@ -144,6 +144,8 @@ with tab_chat:
         # Display conversation
         for msg in st.session_state[chat_key]:
             with st.chat_message(msg["role"]):
+                if msg.get("source_badge"):
+                    st.caption(msg["source_badge"])
                 st.markdown(msg["content"])
                 if msg.get("sources"):
                     with st.expander(f"📚 Grounded Sources ({len(msg['sources'])})"):
@@ -153,6 +155,10 @@ with tab_chat:
                                 f"— *Score: {round(src['score'] * 100, 1)}%*\n\n"
                                 f"```\n{src['content']}\n```"
                             )
+                if msg.get("web_sources"):
+                    with st.expander(f"🌐 Referenced Web Sources ({len(msg['web_sources'])})"):
+                        for ws in msg["web_sources"]:
+                            st.markdown(f"- [{ws['title']}]({ws['url']})")
 
         # Chat input
         if prompt := st.chat_input(f"Ask anything about {active_file['original_filename']}..."):
@@ -175,9 +181,23 @@ with tab_chat:
                         if res.status_code == 200:
                             data = res.json()
                             answer = data.get("answer", "")
+                            answer_source = data.get("answer_source", "document")
                             sources = data.get("sources", [])
+                            web_sources = data.get("web_sources", [])
 
+                            # Source badge
+                            if answer_source == "web":
+                                badge = "🌐 **Web Search Fallback** *(Not found in document)*"
+                            elif answer_source == "llm":
+                                badge = "🤖 **General AI Knowledge** *(Not found in document)*"
+                            elif answer_source == "none":
+                                badge = "⚠️ **Web Search Unavailable**"
+                            else:
+                                badge = "📄 **Grounded in Document**"
+
+                            st.caption(badge)
                             st.markdown(answer)
+
                             if sources:
                                 with st.expander(f"📚 Grounded Sources ({len(sources)}) — ⚡ {duration_ms} ms"):
                                     for src in sources:
@@ -187,10 +207,17 @@ with tab_chat:
                                             f"```\n{src['content']}\n```"
                                         )
 
+                            if web_sources:
+                                with st.expander(f"🌐 Referenced Web Sources ({len(web_sources)}) — ⚡ {duration_ms} ms"):
+                                    for ws in web_sources:
+                                        st.markdown(f"- [{ws['title']}]({ws['url']})")
+
                             st.session_state[chat_key].append({
                                 "role": "assistant",
                                 "content": answer,
+                                "source_badge": badge,
                                 "sources": sources,
+                                "web_sources": web_sources,
                             })
                         else:
                             st.error(f"Error ({res.status_code}): {res.text}")
