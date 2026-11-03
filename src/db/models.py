@@ -60,6 +60,8 @@ class UploadedFile(Base):
     minio_etag: Mapped[str | None] = mapped_column(Text)
     page_count: Mapped[int | None] = mapped_column(Integer)
     chunk_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Whole-document summary for broad questions; NULL until generated after processing.
+    summary: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(
         Enum(*FILE_STATUSES, name="file_status"),
         default="pending",
