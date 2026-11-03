@@ -99,11 +99,9 @@ class DocumentChunk(Base):
         UUID(as_uuid=True), ForeignKey("uploaded_files.id", ondelete="CASCADE")
     )
     chunk_index: Mapped[int] = mapped_column(Integer)
-    page_number: Mapped[int] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(Text)
-    char_count: Mapped[int] = mapped_column(Integer)
-    word_count: Mapped[int] = mapped_column(Integer)
-    embedding = mapped_column(Vector(EMBEDDING_DIM), nullable=False)
+    # NULL until the embedding step fills it in.
+    embedding = mapped_column(Vector(EMBEDDING_DIM), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
