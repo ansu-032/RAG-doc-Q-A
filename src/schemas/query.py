@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 
 class QueryIn(BaseModel):
-    file_id: uuid.UUID
     question: str = Field(min_length=1)
 
 

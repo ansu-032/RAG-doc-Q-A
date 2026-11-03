@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,8 +11,8 @@ router = APIRouter(tags=["query"])
 
 
 @router.post("/query", response_model=QueryOut)
-async def ask_question(query: QueryIn, db: AsyncSession = Depends(get_db)):
-    record = await file_service.get_file_or_404(db, query.file_id)
+async def ask_question(file_id: uuid.UUID, query: QueryIn, db: AsyncSession = Depends(get_db)):
+    record = await file_service.get_file_or_404(db, file_id)
     if record.status != "ready":
         raise HTTPException(409, f"File is not ready to query (status: {record.status})")
 
