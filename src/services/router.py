@@ -32,7 +32,12 @@ prompt = ChatPromptTemplate.from_messages(
             "without the conversation: replace words like 'this college', 'he', 'it' or 'that' "
             "with what they refer to in the conversation, fix typos and short forms (e.g. 'imp' "
             "means 'important'), keep its meaning, keep names and terms as the user wrote them "
-            "(they may be names from the document), and add no facts beyond those references.",
+            "(they may be names from the document), and add no facts beyond those references.\n\n"
+            "Also set needs_web. It is true ONLY if a correct answer requires recent or current "
+            "information that changes over time, e.g. today's news, latest versions or releases, "
+            "current prices, weather, scores, or who holds a position now. It is false for "
+            "everything else: greetings, opinions, definitions, explanations, history, and "
+            "established facts a language model already knows.",
         ),
         ("human", "{question}"),
     ]
@@ -56,6 +61,7 @@ def format_history(history: list[ChatTurn]) -> str:
 class RouteDecision(BaseModel):
     route: Literal["document_specific", "document_broad", "general"]
     rewritten_question: str = Field(description="The question, rewritten clearly")
+    needs_web: bool = Field(description="True only if answering requires recent or current information")
 
 
 @lru_cache
@@ -74,4 +80,4 @@ async def route(question: str, filename: str, history: list[ChatTurn]) -> RouteD
     except Exception:
         # Any failure (API error, bad output): the document is the safest default.
         logger.exception("Router failed, using document_specific")
-        return RouteDecision(route="document_specific", rewritten_question=question)
+        return RouteDecision(route="document_specific", rewritten_question=question, needs_web=False)

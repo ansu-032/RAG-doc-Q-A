@@ -46,8 +46,8 @@ async def ask_question(file_id: uuid.UUID, query: QueryIn, db: AsyncSession = De
             )
 
     # Not about the document, or the document has no answer: the general model answers,
-    # searching the web only if it decides to.
-    fallback = await general.answer(question)
+    # with a web search first only if the router said the question needs recent data.
+    fallback = await general.answer(question, decision.needs_web)
     return respond(
         answer_source=fallback.source,
         answer=fallback.text,
