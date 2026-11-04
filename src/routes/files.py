@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.deps import get_db
 from src.schemas.file import FileOut
-from src.services import file_service, processing
+from src.services import file_service, processing, scheduler
 
 router = APIRouter(tags=["files"])
 
@@ -15,7 +15,9 @@ router = APIRouter(tags=["files"])
 async def upload_file(
     file: UploadFile, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)
 ):
+    scheduler.touch()
     record = await file_service.upload_file(db, file)
+    await scheduler.refresh()
     background_tasks.add_task(processing.process_file, record.id)
     return record
 
@@ -27,6 +29,7 @@ async def get_file_info(file_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
 @router.get("/file/{file_id}/download")
 async def download_file(file_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    scheduler.touch()
     record, data = await file_service.download_file(db, file_id)
     return Response(
         content=data,
@@ -39,4 +42,6 @@ async def download_file(file_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
 @router.delete("/file/{file_id}", status_code=204)
 async def delete_file(file_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    scheduler.touch()
     await file_service.delete_file(db, file_id)
+    await scheduler.refresh()

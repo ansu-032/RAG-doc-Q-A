@@ -4,6 +4,8 @@
 
 const App = (() => {
   let pollingInterval = null;
+  // How often to check that this browser's files still exist on the server.
+  const FILE_SYNC_INTERVAL_MS = 5 * 60 * 1000;
   let isSendingQuery = false;
 
   function init() {
@@ -24,6 +26,10 @@ const App = (() => {
 
     // Synchronize known files from backend (refresh live statuses)
     refreshFilesFromBackend();
+    setInterval(refreshFilesFromBackend, FILE_SYNC_INTERVAL_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshFilesFromBackend();
+    });
 
     // Check backend connection
     checkBackendHealth();
@@ -70,7 +76,8 @@ const App = (() => {
                 const updated = await Api.getFile(f.id);
                 State.addOrUpdateFile(updated);
               } catch (e) {
-                console.warn(`Could not poll file ${f.id}:`, e);
+                if (e.status === 404) State.removeFile(f.id);
+                else console.warn(`Could not poll file ${f.id}:`, e);
               }
             }
           }
@@ -92,9 +99,9 @@ const App = (() => {
         const updated = await Api.getFile(f.id);
         State.addOrUpdateFile(updated);
       } catch (e) {
-        // If file 404s, user might have deleted it outside or DB was wiped
+        // Gone from the server (deleted or cleaned up): remove the file and its chat here too.
         if (e.status === 404) {
-          console.warn(`File ${f.id} no longer exists on server`);
+          State.removeFile(f.id);
         }
       }
     }
@@ -385,6 +392,11 @@ const App = (() => {
     } catch (err) {
       const loader = document.getElementById("chat-loading-indicator");
       if (loader) loader.remove();
+
+      if (err.status === 404) {
+        State.removeFile(activeFile.id);
+        return;
+      }
 
       State.addChatMessage(activeFile.id, {
         sender: "assistant",

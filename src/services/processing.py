@@ -5,7 +5,7 @@ import uuid
 
 from src.db.models import DocumentChunk, UploadedFile
 from src.db.session import SessionLocal
-from src.services import storage
+from src.services import scheduler, storage
 from src.services.chunking import split_pages
 from src.services.embeddings import embed_passages
 from src.services.extraction import extract_text
@@ -14,6 +14,15 @@ logger = logging.getLogger("uvicorn.error")
 
 
 async def process_file(file_id: uuid.UUID) -> None:
+    # Cleanup waits while this runs, and the idle time starts counting when it ends.
+    scheduler.job_started()
+    try:
+        await _process_file(file_id)
+    finally:
+        scheduler.job_finished()
+
+
+async def _process_file(file_id: uuid.UUID) -> None:
     """Background task run after upload: file in MinIO -> text -> chunks -> embeddings.
 
     Uses its own DB session, because the request's session is closed by the time this runs.

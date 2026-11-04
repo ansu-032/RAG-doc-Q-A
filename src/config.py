@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,6 +38,10 @@ class Settings(BaseSettings):
     # Retrieval: chunks sent to the LLM, and the lowest cosine similarity that counts as relevant.
     top_k: int
     min_score: float
+
+    # Scheduler check interval, and the idle time before all user data is deleted.
+    cleanup_interval_minutes: int = Field(gt=0)
+    cleanup_idle_minutes: int = Field(gt=0)
 
 
 settings = Settings()

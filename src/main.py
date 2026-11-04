@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from src.middleware import log_requests
 from src.routes import files, query
-from src.services import storage
+from src.services import scheduler, storage
 
 
 @asynccontextmanager
@@ -14,7 +14,9 @@ async def lifespan(app: FastAPI):
 
     logging.getLogger("uvicorn.access").disabled = True
     await asyncio.to_thread(storage.ensure_bucket)
+    await scheduler.refresh()
     yield
+    scheduler.stop()
 
 
 app = FastAPI(title="Citely", lifespan=lifespan)
