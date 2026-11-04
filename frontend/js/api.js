@@ -1,5 +1,5 @@
 /**
- * API Service for RAG Document Q&A
+ * API Service for Citely
  * Interacts with FastAPI backend endpoints:
  * - POST   /api/v1/file
  * - GET    /api/v1/file/{file_id}

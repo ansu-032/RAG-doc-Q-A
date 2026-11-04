@@ -1,5 +1,5 @@
 /**
- * Main Application Controller for RAG Document Q&A
+ * Main Application Controller for Citely
  */
 
 const App = (() => {
@@ -42,9 +42,6 @@ const App = (() => {
       applyTheme(payload);
     } else if (event === "tab_change") {
       renderCurrentTab();
-      if (payload === "performance") {
-        loadPerformanceData();
-      }
     } else if (event === "files_update") {
       renderFiles();
       renderActiveFileHeader();
@@ -57,8 +54,6 @@ const App = (() => {
       if (payload.fileId === State.activeFileId) {
         renderChatMessages();
       }
-    } else if (event === "filter_change") {
-      loadPerformanceData();
     }
   }
 

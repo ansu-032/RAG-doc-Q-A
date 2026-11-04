@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="RAG Document Q&A", lifespan=lifespan)
+app = FastAPI(title="Citely", lifespan=lifespan)
 app.middleware("http")(log_requests)
 app.include_router(files.router, prefix="/api/v1")
 app.include_router(query.router, prefix="/api/v1")

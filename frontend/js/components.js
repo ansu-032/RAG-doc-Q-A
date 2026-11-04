@@ -1,5 +1,5 @@
 /**
- * Component renderers for RAG Document Q&A
+ * Component renderers for Citely
  */
 
 const Components = (() => {
@@ -443,7 +443,7 @@ const Components = (() => {
         <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Avg LLM Time</span>
           <div class="text-2xl font-black text-violet-600 dark:text-violet-400 mt-1">${q.avg_generation_ms ? Math.round(q.avg_generation_ms) + " ms" : "-"}</div>
-          <span class="text-[11px] text-slate-400 font-medium">Groq Cloud inference</span>
+          <span class="text-[11px] text-slate-400 font-medium">Answer generation</span>
         </div>
 
         <!-- Answer Found Rate -->

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Zero-dependency HTTP server and reverse-proxy for the RAG Document Q&A frontend.
+"""Zero-dependency HTTP server and reverse-proxy for the Citely frontend.
 
 - Serves static frontend files on port 3000 (or custom port via --port).
 - Proxies all /api/v1/* requests to the FastAPI backend (default http://localhost:8000).
@@ -106,7 +106,7 @@ def run(port: int = 3000, backend: str = "http://localhost:8000"):
     server_address = ("", port)
     httpd = http.server.ThreadingHTTPServer(server_address, FrontendProxyHandler)
     print("=" * 65)
-    print(f"🚀 RAG Document Q&A Frontend running at: http://localhost:{port}")
+    print(f"🚀 Citely Frontend running at: http://localhost:{port}")
     print(f"🔗 Forwarding API calls (/api/v1/*) to:   {BACKEND_URL}/api/v1")
     print(f"📂 Serving static files from:             {FRONTEND_DIR}")
     print("=" * 65)
@@ -118,7 +118,7 @@ def run(port: int = 3000, backend: str = "http://localhost:8000"):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Serve the RAG Frontend")
+    parser = argparse.ArgumentParser(description="Serve the Citely frontend")
     parser.add_argument("--port", type=int, default=3000, help="Port to serve on (default: 3000)")
     parser.add_argument("--backend", type=str, default="http://localhost:8000", help="FastAPI backend URL")
     args = parser.parse_args()

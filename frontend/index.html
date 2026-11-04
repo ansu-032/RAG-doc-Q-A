@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAG Document Q&amp;A | Grounded Intelligence</title>
+  <title>Citely | Grounded Intelligence</title>
   
   <!-- Inter Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,10 +39,10 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 
-<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-sans h-[100dvh] overflow-hidden flex flex-col transition-colors duration-200">
 
   <!-- Top App Navigation Bar -->
-  <header class="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 glass-panel">
+  <header class="shrink-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 glass-panel">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       
       <!-- Brand Logo -->
@@ -54,8 +54,7 @@
         </div>
         <div>
           <span class="font-extrabold text-base tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-            RAG Document Q&amp;A
-            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">FastEmbed + Groq</span>
+            Citely
           </span>
           <span class="block text-[11px] text-slate-500 dark:text-slate-400">Grounded semantic search &amp; observability</span>
         </div>
@@ -129,17 +128,17 @@
   </header>
 
   <!-- Main Content Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+  <main class="flex-1 min-h-0 overflow-y-auto max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
 
     <!-- ========================================== -->
     <!-- TAB 1: Q&A CHAT INTERFACE                  -->
     <!-- ========================================== -->
-    <section id="tab-pane-chat" class="tab-pane flex-1 flex flex-col h-full space-y-3">
+    <section id="tab-pane-chat" class="tab-pane flex-1 min-h-0 flex flex-col space-y-3">
       <!-- Active Document Banner -->
       <div id="active-file-banner"></div>
 
       <!-- Chat Container -->
-      <div class="flex-1 flex flex-col bg-slate-100/60 dark:bg-slate-900/40 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden min-h-[500px]">
+      <div class="flex-1 flex flex-col bg-slate-100/60 dark:bg-slate-900/40 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden min-h-[320px]">
         
         <!-- Chat Header Actions -->
         <div class="px-4 py-2.5 bg-white/70 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
@@ -159,7 +158,7 @@
         </div>
 
         <!-- Chat Messages Scroll Area -->
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2"></div>
+        <div id="chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-2"></div>
 
         <!-- Query Input Bar -->
         <div class="p-3 sm:p-4 bg-white/80 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800">
@@ -182,10 +181,10 @@
               </svg>
             </button>
           </div>
-          <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
-            <span>Powered by pgvector HNSW similarity search &amp; Groq LLM</span>
+          <div class="flex items-center justify-end text-[11px] text-slate-400 mt-2 px-1">
             <span>Shift + Enter for new line</span>
           </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 text-center">AI can make mistakes.</p>
         </div>
 
       </div>
@@ -200,7 +199,7 @@
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
         <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">Upload New Document</h2>
         <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          Supported formats: <strong>PDF</strong>, <strong>DOCX</strong> (with tables), and <strong>Markdown</strong>. Chunks and FastEmbed 384-dim vectors are generated in the background.
+          Supported formats: <strong>PDF</strong>, <strong>DOCX</strong> (with tables), and <strong>Markdown</strong>. Your document is processed in the background.
         </p>
 
         <div
@@ -238,40 +237,9 @@
     <!-- ========================================== -->
     <!-- TAB 3: PERFORMANCE ANALYTICS               -->
     <!-- ========================================== -->
-    <section id="tab-pane-performance" class="tab-pane hidden flex-1 flex flex-col space-y-6">
-      
-      <!-- Top Overview Header -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">Performance &amp; Latency Analytics</h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Continuous telemetry across FastEmbed ONNX embedding, pgvector cosine search, and Groq LLM</p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <!-- Filter Buttons -->
-          <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5 bg-white dark:bg-slate-900 text-xs">
-            <button onclick="State.setActiveRunFilter('all')" class="px-2.5 py-1 rounded-md font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">All</button>
-            <button onclick="State.setActiveRunFilter('query')" class="px-2.5 py-1 rounded-md font-medium text-purple-600 dark:text-purple-400 hover:bg-slate-100 dark:hover:bg-slate-800">Queries</button>
-            <button onclick="State.setActiveRunFilter('ingestion')" class="px-2.5 py-1 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800">Ingestions</button>
-          </div>
-
-          <button onclick="App.loadPerformanceData()" class="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1 transition-colors shadow-sm">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span>Refresh</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- KPI Metric Cards Container -->
-      <div id="performance-summary-container"></div>
-
-      <!-- Recent Execution Logs Table -->
-      <div class="space-y-3">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Recent Execution Runs</h3>
-        <div id="performance-runs-container"></div>
-      </div>
+    <section id="tab-pane-performance" class="tab-pane hidden flex-1 flex flex-col items-center justify-center text-center gap-2 py-16">
+      <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">Under development</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Performance Analytics isn't available yet.</p>
     </section>
 
   </main>

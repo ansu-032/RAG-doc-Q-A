@@ -1,5 +1,5 @@
 /**
- * State Management for RAG Document Q&A
+ * State Management for Citely
  * Handles files, active document, chat history, and auto-polling
  */
 

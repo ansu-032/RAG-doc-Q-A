@@ -1,4 +1,4 @@
-"""Streamlit Frontend for RAG Document Q&A.
+"""Streamlit Frontend for Citely.
 
 Matches Step 12 of BUILD_GUIDE.md, upgraded to support:
 - Multi-format uploads (PDF, DOCX, Markdown)
@@ -18,14 +18,14 @@ import streamlit as st
 API_URL = os.environ.get("BACKEND_URL", "http://localhost:8000/api/v1").rstrip("/")
 
 st.set_page_config(
-    page_title="RAG Document Q&A",
+    page_title="Citely",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-st.title("⚡ RAG Document Q&A")
-st.caption("Grounded Semantic Search with FastEmbed (384-dim) & Groq LLM Inference")
+st.title("⚡ Citely")
+st.caption("Answers cited from your documents")
 
 # Sidebar: Document Management & Upload
 with st.sidebar:
