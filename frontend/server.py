@@ -65,8 +65,11 @@ class FrontendProxyHandler(http.server.SimpleHTTPRequestHandler):
         # Copy non-host headers
         headers = {}
         for header, value in self.headers.items():
-            if header.lower() not in ("host", "content-length"):
+            if header.lower() not in ("host", "content-length", "x-forwarded-for"):
                 headers[header] = value
+        # The backend rate-limits by IP and would otherwise see only this proxy. Set here, never
+        # copied from the request, so a client cannot fake its address to dodge the limit.
+        headers["X-Forwarded-For"] = self.client_address[0]
 
         req = urllib.request.Request(target_url, data=body, headers=headers, method=method)
 

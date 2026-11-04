@@ -24,6 +24,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# A requests.Session keeps the backend's session cookie; without it this user loses access to their files.
+if "http" not in st.session_state:
+    st.session_state["http"] = requests.Session()
+http = st.session_state["http"]
+
 st.title("⚡ Citely")
 st.caption("Answers cited from your documents")
 
@@ -40,7 +45,7 @@ with st.sidebar:
         with st.spinner(f"Uploading {uploaded_file.name}..."):
             try:
                 files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type or "application/octet-stream")}
-                resp = requests.post(f"{API_URL}/file", files=files, timeout=30)
+                resp = http.post(f"{API_URL}/file", files=files, timeout=30)
                 if resp.status_code == 201:
                     st.success(f"Uploaded! Processing pipeline started.")
                     file_record = resp.json()
@@ -65,7 +70,7 @@ with st.sidebar:
     updated_files = []
     for f in st.session_state["saved_files"]:
         try:
-            r = requests.get(f"{API_URL}/file/{f['id']}", timeout=5)
+            r = http.get(f"{API_URL}/file/{f['id']}", timeout=5)
             if r.status_code == 200:
                 updated_files.append(r.json())
             else:
@@ -98,7 +103,7 @@ with st.sidebar:
             with col_d:
                 # Download original
                 try:
-                    dl_resp = requests.get(f"{API_URL}/file/{selected_file_id}/download", timeout=10)
+                    dl_resp = http.get(f"{API_URL}/file/{selected_file_id}/download", timeout=10)
                     if dl_resp.status_code == 200:
                         st.download_button(
                             "📥 Download",
@@ -112,7 +117,7 @@ with st.sidebar:
             with col_x:
                 if st.button("🗑️ Delete", use_container_width=True):
                     try:
-                        requests.delete(f"{API_URL}/file/{selected_file_id}", timeout=10)
+                        http.delete(f"{API_URL}/file/{selected_file_id}", timeout=10)
                         st.session_state["saved_files"] = [f for f in files_list if f["id"] != selected_file_id]
                         st.session_state["active_file_id"] = None
                         st.rerun()
@@ -170,7 +175,7 @@ with tab_chat:
                 with st.spinner("Searching passages and generating answer..."):
                     start = time.perf_counter()
                     try:
-                        res = requests.post(
+                        res = http.post(
                             f"{API_URL}/query",
                             params={"file_id": active_file_id},
                             json={"question": prompt},
@@ -229,7 +234,7 @@ with tab_perf:
     st.subheader("Observability & Latency Metrics")
 
     try:
-        summary_resp = requests.get(f"{API_URL}/performance/summary", timeout=5)
+        summary_resp = http.get(f"{API_URL}/performance/summary", timeout=5)
         if summary_resp.status_code == 200:
             summary = summary_resp.json()
             q = summary.get("query", {})
@@ -248,7 +253,7 @@ with tab_perf:
 
     # List recent performance runs
     try:
-        runs_resp = requests.get(f"{API_URL}/performance?limit=25", timeout=5)
+        runs_resp = http.get(f"{API_URL}/performance?limit=25", timeout=5)
         if runs_resp.status_code == 200:
             runs = runs_resp.json()
             if runs:

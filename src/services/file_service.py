@@ -11,14 +11,15 @@ from src.db.models import UploadedFile
 from src.services import storage
 
 
-async def get_file_or_404(db: AsyncSession, file_id: uuid.UUID) -> UploadedFile:
+async def get_file_or_404(db: AsyncSession, file_id: uuid.UUID, session_id: uuid.UUID | None) -> UploadedFile:
     record = await db.get(UploadedFile, file_id)
-    if record is None:
+    # Another session's file looks exactly like one that does not exist.
+    if record is None or record.session_id != session_id:
         raise HTTPException(404, "File not found")
     return record
 
 
-async def upload_file(db: AsyncSession, file: UploadFile) -> UploadedFile:
+async def upload_file(db: AsyncSession, file: UploadFile, session_id: uuid.UUID) -> UploadedFile:
     if file.content_type not in settings.allowed_mime_types:
         raise HTTPException(415, f"File type '{file.content_type}' is not allowed")
 
@@ -31,6 +32,7 @@ async def upload_file(db: AsyncSession, file: UploadFile) -> UploadedFile:
 
     record = UploadedFile(
         id=file_id,
+        session_id=session_id,
         original_filename=file.filename,
         mime_type=file.content_type,
         file_extension=extension,
@@ -51,14 +53,16 @@ async def upload_file(db: AsyncSession, file: UploadFile) -> UploadedFile:
     return record
 
 
-async def download_file(db: AsyncSession, file_id: uuid.UUID) -> tuple[UploadedFile, bytes]:
-    record = await get_file_or_404(db, file_id)
+async def download_file(
+    db: AsyncSession, file_id: uuid.UUID, session_id: uuid.UUID | None
+) -> tuple[UploadedFile, bytes]:
+    record = await get_file_or_404(db, file_id, session_id)
     data = await asyncio.to_thread(storage.get_file, record.minio_object_key)
     return record, data
 
 
-async def delete_file(db: AsyncSession, file_id: uuid.UUID) -> None:
-    record = await get_file_or_404(db, file_id)
+async def delete_file(db: AsyncSession, file_id: uuid.UUID, session_id: uuid.UUID | None) -> None:
+    record = await get_file_or_404(db, file_id, session_id)
     await asyncio.to_thread(storage.delete_file, record.minio_object_key)
     await db.delete(record)
     await db.commit()

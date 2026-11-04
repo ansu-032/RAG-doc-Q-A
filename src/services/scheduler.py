@@ -1,52 +1,105 @@
-"""Deletes all files (and their chunks) after a period with no user activity.
+"""Deletes a session's files (and their chunks) after that session has been idle for a while.
 
 The scheduler only runs while there is data to clean: refresh() turns it on after an
-upload, and off once nothing is left. Activity and running jobs are kept in memory, so a
-server restart restarts the idle timer, and this assumes a single server process.
+upload, and off once no files are left. Activity is stored in the database, so it
+survives server restarts and each browser session has its own idle timer.
 """
 
 import asyncio
+import datetime
 import logging
-import time
 import uuid
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import delete, exists, func, select, update
 
 from src.config import settings
-from src.db.models import UploadedFile
+from src.db.models import UploadedFile, UserSession
 from src.db.session import SessionLocal
 from src.services import file_service
 
 logger = logging.getLogger("uvicorn.error")
 
-_last_activity = time.monotonic()
-_running_jobs = 0
 # The on/off switch: the scheduler is on while this task is alive.
 _task: asyncio.Task | None = None
 _lock = asyncio.Lock()
 
 
-def touch() -> None:
+async def touch(session_id: uuid.UUID | None) -> None:
     """Record user activity. Status polling does not call this, so an open tab alone stays idle."""
-    global _last_activity
-    _last_activity = time.monotonic()
+    if session_id is None:
+        return
+    try:
+        async with SessionLocal() as db:
+            await db.execute(
+                update(UserSession).where(UserSession.id == session_id).values(last_activity_at=func.now())
+            )
+            await db.commit()
+    except Exception:
+        # Never fail the user's request over this.
+        logger.exception("Could not record session activity")
 
 
-def job_started() -> None:
-    global _running_jobs
-    _running_jobs += 1
+def _idle_condition():
+    """True for sessions past the idle time with no file being processed.
+
+    A file stuck in processing since before the cutoff (its job died in a restart) does
+    not count, or that session could never be cleaned.
+    """
+    cutoff = func.now() - datetime.timedelta(minutes=settings.cleanup_idle_minutes)
+    being_processed = exists().where(
+        UploadedFile.session_id == UserSession.id,
+        UploadedFile.status.in_(("pending", "processing")),
+        UploadedFile.updated_at >= cutoff,
+    )
+    return UserSession.last_activity_at < cutoff, ~being_processed
 
 
-def job_finished() -> None:
-    global _running_jobs
-    _running_jobs -= 1
-    touch()
-
-
-async def _file_ids() -> list[uuid.UUID]:
+async def _is_idle(session_id: uuid.UUID) -> bool:
     async with SessionLocal() as db:
-        return list(await db.scalars(select(UploadedFile.id)))
+        query = select(UserSession.id).where(UserSession.id == session_id, *_idle_condition())
+        return await db.scalar(query) is not None
+
+
+async def _clean_session(session_id: uuid.UUID) -> int:
+    async with SessionLocal() as db:
+        file_ids = list(await db.scalars(select(UploadedFile.id).where(UploadedFile.session_id == session_id)))
+
+    deleted = 0
+    for file_id in file_ids:
+        # The user came back mid-cleanup: keep whatever is left.
+        if not await _is_idle(session_id):
+            return deleted
+        try:
+            async with SessionLocal() as db:
+                await file_service.delete_file(db, file_id, session_id)
+            deleted += 1
+        except HTTPException:
+            pass  # The user already deleted this one.
+        except Exception:
+            logger.exception("Cleanup could not delete a file")
+
+    # Only once it is empty and still idle: a failed delete keeps the session for the next run.
+    async with SessionLocal() as db:
+        has_files = exists().where(UploadedFile.session_id == UserSession.id)
+        await db.execute(
+            delete(UserSession).where(UserSession.id == session_id, *_idle_condition(), ~has_files)
+        )
+        await db.commit()
+    return deleted
+
+
+async def clean_idle_sessions() -> int:
+    """Clean every idle session; returns how many files were deleted."""
+    async with SessionLocal() as db:
+        session_ids = list(await db.scalars(select(UserSession.id).where(*_idle_condition())))
+
+    deleted = 0
+    for session_id in session_ids:
+        deleted += await _clean_session(session_id)
+    if session_ids:
+        logger.info("Cleanup deleted %d file(s) from %d idle session(s)", deleted, len(session_ids))
+    return deleted
 
 
 async def _has_data() -> bool:
@@ -55,42 +108,13 @@ async def _has_data() -> bool:
         return await db.scalar(select(UploadedFile.id).limit(1)) is not None
 
 
-async def _delete_file(file_id: uuid.UUID) -> None:
-    async with SessionLocal() as db:
-        await file_service.delete_file(db, file_id)
-
-
-async def clean_if_idle() -> int:
-    """Delete every file if the idle time has passed; returns how many were deleted."""
-    idle_seconds = time.monotonic() - _last_activity
-    if _running_jobs or idle_seconds < settings.cleanup_idle_minutes * 60:
-        return 0
-
-    started_from = _last_activity
-    deleted = 0
-    for file_id in await _file_ids():
-        # The user came back mid-cleanup: keep whatever is left.
-        if _last_activity != started_from or _running_jobs:
-            logger.info("Cleanup stopped early: new activity")
-            break
-        try:
-            await _delete_file(file_id)
-            deleted += 1
-        except HTTPException:
-            pass  # The user already deleted this one.
-        except Exception:
-            logger.exception("Cleanup could not delete %s", file_id)
-    logger.info("Cleanup deleted %d file(s) after %d idle minutes", deleted, idle_seconds // 60)
-    return deleted
-
-
 async def _run() -> None:
     global _task
     while True:
         await asyncio.sleep(settings.cleanup_interval_minutes * 60)
         # A failure (e.g. database down) must not kill the scheduler: try again next time.
         try:
-            await clean_if_idle()
+            await clean_idle_sessions()
             async with _lock:
                 if not await _has_data():
                     _task = None

@@ -3,6 +3,8 @@ import datetime
 import logging
 import uuid
 
+from sqlalchemy.orm.exc import StaleDataError
+
 from src.db.models import DocumentChunk, UploadedFile
 from src.db.session import SessionLocal
 from src.services import scheduler, storage
@@ -13,13 +15,12 @@ from src.services.extraction import extract_text
 logger = logging.getLogger("uvicorn.error")
 
 
-async def process_file(file_id: uuid.UUID) -> None:
-    # Cleanup waits while this runs, and the idle time starts counting when it ends.
-    scheduler.job_started()
+async def process_file(file_id: uuid.UUID, session_id: uuid.UUID) -> None:
     try:
         await _process_file(file_id)
     finally:
-        scheduler.job_finished()
+        # The idle time starts counting when processing ends.
+        await scheduler.touch(session_id)
 
 
 async def _process_file(file_id: uuid.UUID) -> None:
@@ -54,7 +55,16 @@ async def _process_file(file_id: uuid.UUID) -> None:
             logger.info("Processed %s: %d pages, %d chunks", file_id, len(pages), len(chunks))
         except Exception as e:
             await db.rollback()
-            record.status = "failed"
-            record.error_message = str(e)
-            await db.commit()
+            # The file may have been deleted while it was processing: nothing left to mark as failed.
+            if await db.get(UploadedFile, file_id, populate_existing=True) is None:
+                logger.info("File %s was deleted during processing; results discarded", file_id)
+                return
             logger.exception("Processing failed for %s", file_id)
+            try:
+                record.status = "failed"
+                record.error_message = str(e)
+                await db.commit()
+            except StaleDataError:
+                # Deleted in the moment between that check and this commit.
+                await db.rollback()
+                logger.info("File %s was deleted during processing; results discarded", file_id)
