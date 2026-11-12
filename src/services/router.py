@@ -1,4 +1,3 @@
-import logging
 from functools import lru_cache
 from typing import Literal
 
@@ -7,9 +6,8 @@ from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field
 
 from src.config import settings
+from src.logging_config import logger
 from src.schemas.query import ChatTurn
-
-logger = logging.getLogger("uvicorn.error")
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -68,15 +66,28 @@ class RouteDecision(BaseModel):
 def get_router():
     llm = ChatGroq(model=settings.router_model, api_key=settings.groq_api_key, temperature=0)
     # Strict json_schema: Groq guarantees the output matches (GPT-OSS models); tool calling often broke it.
-    return prompt | llm.with_structured_output(RouteDecision, method="json_schema", strict=True)
+    # include_raw also returns the API response, which holds the token usage.
+    return prompt | llm.with_structured_output(
+        RouteDecision, method="json_schema", strict=True, include_raw=True
+    )
 
 
 async def route(question: str, filename: str, history: list[ChatTurn]) -> RouteDecision:
     """Decide where the question goes, and rewrite it clearly for retrieval and answering."""
     try:
-        return await get_router().ainvoke(
+        result = await get_router().ainvoke(
             {"question": question, "filename": filename, "history": format_history(history)}
         )
+        usage = result["raw"].usage_metadata or {}
+        logger.info(
+            "Router LLM usage: model=%s %s input, %s output tokens",
+            settings.router_model,
+            usage.get("input_tokens"),
+            usage.get("output_tokens"),
+        )
+        if result["parsed"] is None:
+            raise ValueError(f"Router output could not be parsed: {result['parsing_error']}")
+        return result["parsed"]
     except Exception:
         # Any failure (API error, bad output): the document is the safest default.
         logger.exception("Router failed, using document_specific")

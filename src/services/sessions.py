@@ -7,9 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
 from src.db.models import UserSession
+from src.logging_config import logger
 
 COOKIE_NAME = "citely_session"
 COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60
+
+
+def short_id(session_id: uuid.UUID | None) -> str:
+    """A session id for logs. Never log the whole id: it works like a password."""
+    return str(session_id)[:8] if session_id else "none"
 
 
 async def ensure_session(db: AsyncSession, session_id: uuid.UUID | None) -> uuid.UUID:
@@ -22,6 +28,7 @@ async def ensure_session(db: AsyncSession, session_id: uuid.UUID | None) -> uuid
     session = UserSession()
     db.add(session)
     await db.commit()
+    logger.info("New session %s (browser sent an unknown id: %s)", short_id(session.id), session_id is not None)
     return session.id
 
 

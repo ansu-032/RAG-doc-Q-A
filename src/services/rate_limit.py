@@ -11,6 +11,7 @@ from collections import deque
 from fastapi import HTTPException, Request
 
 from src.config import settings
+from src.logging_config import logger
 
 WINDOW_SECONDS = 60 * 60
 # Above this many tracked clients, forget the ones with nothing left in their window.
@@ -36,6 +37,9 @@ def check(action: str, client_ip: str, limit: int) -> None:
 
     if len(hits) >= limit:
         retry_after = math.ceil(WINDOW_SECONDS - (now - hits[0]))
+        logger.warning(
+            "Rate limit hit: action=%s ip=%s limit=%d/h retry_after=%ds", action, client_ip, limit, retry_after
+        )
         raise HTTPException(
             429,
             f"Too many requests. Please try again in {math.ceil(retry_after / 60)} minute(s).",

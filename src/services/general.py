@@ -1,5 +1,5 @@
 import asyncio
-import logging
+import time
 from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Literal
@@ -7,8 +7,7 @@ from typing import Literal
 from groq import APIError, AsyncGroq
 
 from src.config import settings
-
-logger = logging.getLogger("uvicorn.error")
+from src.logging_config import logger
 
 UNAVAILABLE = "Not found in the document, and the general model is unavailable right now."
 SEARCH_UNAVAILABLE = "This needs recent information, and web search is unavailable right now."
@@ -90,27 +89,37 @@ async def complete(system_prompt: str, question: str, max_tokens: int) -> str | 
         return None
     if response.usage:
         logger.info(
-            "General LLM usage: %d input, %d output tokens",
+            "General LLM usage: model=%s %d input, %d output tokens",
+            settings.general_llm_model,
             response.usage.prompt_tokens,
             response.usage.completion_tokens,
         )
-    content = response.choices[0].message.content
-    return content.strip() if content else None
+    choice = response.choices[0]
+    # "length" means the reply cap was hit, often by hidden reasoning: raise MAX_COMPLETION_TOKENS.
+    if choice.finish_reason != "stop":
+        logger.warning("General LLM stopped early: finish_reason=%s", choice.finish_reason)
+    if not choice.message.content:
+        logger.warning("General LLM returned an empty answer")
+        return None
+    return choice.message.content.strip()
 
 
 async def answer(question: str, needs_web: bool = False) -> GeneralAnswer:
     """Answer without the document, searching the web only if the router says it needs recent data."""
     # Only the question is sent: document text never goes into the web search.
     if not needs_web:
+        logger.info("General answer: no web search needed")
         text = await complete(SYSTEM_PROMPT, question, MAX_COMPLETION_TOKENS)
         return GeneralAnswer(text, "llm") if text else GeneralAnswer(UNAVAILABLE, "none")
 
+    start = time.perf_counter()
     try:
         results = await asyncio.to_thread(search_web, question)
     except Exception:
         # No LLM call without results: it could only guess at recent data.
         logger.exception("Web search failed")
         return GeneralAnswer(SEARCH_UNAVAILABLE, "none")
+    logger.info("Web search returned %d result(s) (%d ms)", len(results), (time.perf_counter() - start) * 1000)
     if not results:
         return GeneralAnswer(SEARCH_UNAVAILABLE, "none")
 
