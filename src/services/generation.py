@@ -4,6 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 
 from src.config import settings
+from src.logging_config import logger
 
 NOT_FOUND = "Not found in the documents."
 
@@ -37,4 +38,11 @@ async def answer(question: str, passages: list[str]) -> str:
         return NOT_FOUND
     context = "\n\n".join(f"[{i}] {text}" for i, text in enumerate(passages, start=1))
     message = await (prompt | get_llm()).ainvoke({"context": context, "question": question})
+    usage = message.usage_metadata or {}
+    logger.info(
+        "Answer LLM usage: model=%s %s input, %s output tokens",
+        settings.llm_model,
+        usage.get("input_tokens"),
+        usage.get("output_tokens"),
+    )
     return message.content.strip()
