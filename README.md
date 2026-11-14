@@ -1,5 +1,6 @@
 # Citely — Production-Ready RAG Document Intelligence System
 
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](src/__init__.py)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%20%2B%20pgvector-336791?style=flat&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
@@ -116,12 +117,16 @@ flowchart TD
 RAG-doc Q&A/
 ├── docker-compose.yml         # Container configuration for PostgreSQL (pgvector) & MinIO
 ├── alembic.ini                # Alembic database migration configuration
+├── .bumpversion.cfg           # Semantic versioning configuration
 ├── .env.example               # Template for environment configuration
 ├── .gitignore                 # Git ignore rules
 │
 ├── alembic/                   # Database schema migration revisions
 │   ├── env.py                 # Async Alembic execution harness
 │   └── script.py.mako
+│
+├── scripts/                   # Utility scripts
+│   └── bump_version.py        # Automated SemVer bumper (patch, minor, major)
 │
 ├── src/                       # Backend Application Source Code
 │   ├── requirements.txt       # Project dependencies & package versions

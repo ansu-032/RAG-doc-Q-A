@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
+from src import __version__
 from src.config import settings
 from src.logging_config import configure_logging, logger
 from src.middleware import log_requests
@@ -32,7 +33,7 @@ async def lifespan(app: FastAPI):
     logger.info("Citely stopped")
 
 
-app = FastAPI(title="Citely", lifespan=lifespan)
+app = FastAPI(title="Citely", version=__version__, lifespan=lifespan)
 
 # CORS middleware for browser clients and proxies
 app.add_middleware(
@@ -50,7 +51,7 @@ app.middleware("http")(log_requests)
 @app.get("/health", tags=["system"])
 @app.get("/api/v1/health", tags=["system"])
 async def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "version": __version__}
 
 
 app.include_router(files.router, prefix="/api/v1")
