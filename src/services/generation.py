@@ -12,7 +12,8 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You answer questions using ONLY the numbered context passages below.\n"
+            "You answer questions using ONLY the numbered context passages below from the uploaded documents.\n"
+            "- When multiple documents are referenced in the passages, correlate, synthesize, and compare their concepts to answer relational questions thoroughly.\n"
             "- Cite every fact with the passage number in brackets, like [1] or [2][3].\n"
             "- Do not use outside knowledge, and do not guess.\n"
             f"- If the passages do not contain the answer, reply exactly: {NOT_FOUND}\n\n"

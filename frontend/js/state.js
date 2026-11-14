@@ -6,16 +6,14 @@
 const State = (() => {
   const STORAGE_KEYS = {
     FILES: "rag_saved_files",
-    ACTIVE_FILE: "rag_active_file_id",
-    CHATS: "rag_chat_history",
+    CHATS: "rag_unified_chat",
     THEME: "rag_theme",
   };
 
   // State object
   const data = {
     files: [], // Array of FileOut objects
-    activeFileId: null,
-    chats: {}, // { [fileId]: [ { sender: 'user'|'assistant', text, sources, stats, timestamp } ] }
+    messages: [], // Unified chat message history across all documents
     isDark: false,
     activeTab: "chat", // 'chat' | 'files' | 'performance'
     isPolling: false,
@@ -45,11 +43,8 @@ const State = (() => {
       const storedFiles = localStorage.getItem(STORAGE_KEYS.FILES);
       if (storedFiles) data.files = JSON.parse(storedFiles);
 
-      const storedActive = localStorage.getItem(STORAGE_KEYS.ACTIVE_FILE);
-      if (storedActive) data.activeFileId = storedActive;
-
       const storedChats = localStorage.getItem(STORAGE_KEYS.CHATS);
-      if (storedChats) data.chats = JSON.parse(storedChats);
+      if (storedChats) data.messages = JSON.parse(storedChats);
 
       const storedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
       if (storedTheme) {
@@ -60,13 +55,6 @@ const State = (() => {
     } catch (e) {
       console.warn("Failed to load initial state from localStorage:", e);
     }
-
-    // Ensure valid activeFileId
-    if (data.activeFileId && !data.files.some((f) => f.id === data.activeFileId)) {
-      data.activeFileId = data.files.length > 0 ? data.files[0].id : null;
-    } else if (!data.activeFileId && data.files.length > 0) {
-      data.activeFileId = data.files[0].id;
-    }
   }
 
   function saveFiles() {
@@ -74,7 +62,7 @@ const State = (() => {
   }
 
   function saveChats() {
-    localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(data.chats));
+    localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(data.messages));
   }
 
   return {
@@ -85,11 +73,8 @@ const State = (() => {
     get files() {
       return data.files;
     },
-    get activeFileId() {
-      return data.activeFileId;
-    },
-    get activeFile() {
-      return data.files.find((f) => f.id === data.activeFileId) || null;
+    get readyFiles() {
+      return data.files.filter((f) => f.status === "ready");
     },
     get isDark() {
       return data.isDark;
@@ -102,8 +87,7 @@ const State = (() => {
     },
 
     getActiveChatHistory() {
-      if (!data.activeFileId) return [];
-      return data.chats[data.activeFileId] || [];
+      return data.messages;
     },
 
     // Setters & Actions
@@ -123,10 +107,14 @@ const State = (() => {
       notify("theme_change", data.isDark);
     },
 
-    setActiveFile(fileId) {
-      data.activeFileId = fileId;
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_FILE, fileId || "");
-      notify("active_file_change", fileId);
+    setFiles(fileList) {
+      const existingMap = new Map((data.files || []).map((f) => [f.id, f]));
+      data.files = (fileList || []).map((f) => {
+        const existing = existingMap.get(f.id);
+        return existing && existing.batch_id ? { ...f, batch_id: existing.batch_id } : f;
+      });
+      saveFiles();
+      notify("files_update", data.files);
     },
 
     addOrUpdateFile(fileRecord) {
@@ -137,49 +125,29 @@ const State = (() => {
         data.files.unshift(fileRecord);
       }
       saveFiles();
-
-      // If active file is updated or unset, set it
-      if (!data.activeFileId) {
-        data.activeFileId = fileRecord.id;
-        localStorage.setItem(STORAGE_KEYS.ACTIVE_FILE, fileRecord.id);
-      }
-
       notify("files_update", data.files);
     },
 
     removeFile(fileId) {
       data.files = data.files.filter((f) => f.id !== fileId);
-      delete data.chats[fileId];
       saveFiles();
-      saveChats();
-
-      if (data.activeFileId === fileId) {
-        data.activeFileId = data.files.length > 0 ? data.files[0].id : null;
-        localStorage.setItem(STORAGE_KEYS.ACTIVE_FILE, data.activeFileId || "");
-      }
-
       notify("files_update", data.files);
-      notify("active_file_change", data.activeFileId);
     },
 
-    addChatMessage(fileId, message) {
-      if (!data.chats[fileId]) {
-        data.chats[fileId] = [];
-      }
-      data.chats[fileId].push({
+    addChatMessage(message) {
+      data.messages.push({
         ...message,
         id: "msg_" + Math.random().toString(36).substring(2, 9),
         timestamp: new Date().toISOString(),
       });
       saveChats();
-      notify("chat_update", { fileId, messages: data.chats[fileId] });
+      notify("chat_update", { messages: data.messages });
     },
 
-    clearChat(fileId) {
-      if (!fileId) return;
-      data.chats[fileId] = [];
+    clearChat() {
+      data.messages = [];
       saveChats();
-      notify("chat_update", { fileId, messages: [] });
+      notify("chat_update", { messages: [] });
     },
 
     // Check if any file is pending/processing to schedule background polling

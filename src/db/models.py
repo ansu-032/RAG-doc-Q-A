@@ -118,6 +118,7 @@ class DocumentChunk(Base):
         UUID(as_uuid=True), ForeignKey("uploaded_files.id", ondelete="CASCADE")
     )
     chunk_index: Mapped[int] = mapped_column(Integer)
+    page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     content: Mapped[str] = mapped_column(Text)
     # NULL until the embedding step fills it in.
     embedding = mapped_column(Vector(EMBEDDING_DIM), nullable=True)

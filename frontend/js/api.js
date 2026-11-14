@@ -11,15 +11,45 @@
  */
 
 const Api = (() => {
-  // If served through frontend server.py proxy, relative path "/api/v1" works directly.
-  // Can be overridden by the user in Settings modal.
-  let baseUrl = localStorage.getItem("rag_api_base_url") || "/api/v1";
+  const normalizeUrl = (url) => {
+    if (!url) return "";
+    let cleaned = url.trim().replace(/\/+$/, "");
+    if ((cleaned.startsWith("http://") || cleaned.startsWith("https://")) && !cleaned.endsWith("/api/v1")) {
+      cleaned = `${cleaned}/api/v1`;
+    }
+    return cleaned;
+  };
+
+  const getDefaultBaseUrl = () => {
+    if (typeof window !== "undefined") {
+      if (window.location.protocol === "file:") {
+        return "http://localhost:8000/api/v1";
+      }
+      const port = window.location.port;
+      // Port 8000 (FastAPI), Port 3000 (frontend proxy), or standard 80/443 (reverse proxy) use relative /api/v1
+      if (port === "8000" || port === "3000" || port === "") {
+        return "/api/v1";
+      }
+      // Any other port (e.g. Live Server on 5500, 8080, etc.) connects to FastAPI at port 8000
+      return "http://localhost:8000/api/v1";
+    }
+    return "/api/v1";
+  };
+
+  let savedUrl = localStorage.getItem("rag_api_base_url");
+  let baseUrl = savedUrl ? normalizeUrl(savedUrl) : getDefaultBaseUrl();
 
   const getBaseUrl = () => baseUrl;
 
   const setBaseUrl = (url) => {
-    baseUrl = url.replace(/\/+$/, "");
+    baseUrl = normalizeUrl(url) || getDefaultBaseUrl();
     localStorage.setItem("rag_api_base_url", baseUrl);
+  };
+
+  const resetBaseUrl = () => {
+    localStorage.removeItem("rag_api_base_url");
+    baseUrl = getDefaultBaseUrl();
+    return baseUrl;
   };
 
   /**
@@ -33,6 +63,9 @@ const Api = (() => {
     if (!(options.body instanceof FormData) && !headers["Content-Type"]) {
       headers["Content-Type"] = "application/json";
     }
+
+    // Always include credentials so the session cookie is preserved across ports/origins
+    options.credentials = options.credentials || "include";
 
     try {
       const response = await fetch(url, { ...options, headers });
@@ -78,6 +111,28 @@ const Api = (() => {
   return {
     getBaseUrl,
     setBaseUrl,
+    resetBaseUrl,
+
+    /**
+     * List all documents in the session
+     */
+    async getFiles() {
+      return await request("/files");
+    },
+
+    /**
+     * Upload multiple document files (PDF, DOCX, Markdown)
+     */
+    async uploadFiles(files) {
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append("files", file);
+      }
+      return await request("/files", {
+        method: "POST",
+        body: formData,
+      });
+    },
 
     /**
      * Upload a document file (PDF, DOCX, Markdown)
@@ -123,10 +178,13 @@ const Api = (() => {
     },
 
     /**
-     * Query a specific document with natural language question
+     * Query documents with natural language question (specific file or entire workspace)
      */
     async askQuestion(fileId, question, history = []) {
-      return await request(`/query?file_id=${encodeURIComponent(fileId)}`, {
+      const endpoint = fileId && fileId !== "all"
+        ? `/query?file_id=${encodeURIComponent(fileId)}`
+        : "/query";
+      return await request(endpoint, {
         method: "POST",
         body: JSON.stringify({ question, history }),
       });
@@ -157,15 +215,18 @@ const Api = (() => {
      */
     async testConnection() {
       try {
-        // Try performance endpoint or file probe
-        const runs = await request("/performance?limit=1");
+        await request("/health");
         return { ok: true, message: "Backend is reachable and responding" };
       } catch (err) {
-        // Even if 404 or 422, the server might be reachable
-        if (err.status && err.status !== 502) {
-          return { ok: true, message: `Connected (HTTP ${err.status})` };
+        try {
+          await request("/files");
+          return { ok: true, message: "Backend is reachable and responding" };
+        } catch (e) {
+          if (e.status && e.status !== 502) {
+            return { ok: true, message: `Connected (HTTP ${e.status})` };
+          }
+          return { ok: false, message: e.message };
         }
-        return { ok: false, message: err.message };
       }
     },
   };

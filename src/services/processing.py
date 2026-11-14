@@ -65,7 +65,11 @@ async def _process_file(file_id: uuid.UUID) -> None:
             step = "save chunks"
             db.add_all(
                 DocumentChunk(
-                    file_id=file_id, chunk_index=c.chunk_index, content=c.content, embedding=v
+                    file_id=file_id,
+                    chunk_index=c.chunk_index,
+                    page_number=c.page_number,
+                    content=c.content,
+                    embedding=v,
                 )
                 for c, v in zip(chunks, vectors)
             )
