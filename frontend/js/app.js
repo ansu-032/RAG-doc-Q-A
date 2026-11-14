@@ -51,6 +51,7 @@ const App = (() => {
     } else if (event === "files_update") {
       renderFiles();
       renderActiveFileHeader();
+      renderChatMessages();
       startPollingIfNeeded();
     } else if (event === "chat_update") {
       renderChatMessages();
@@ -160,10 +161,10 @@ const App = (() => {
             <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
-            <span>No documents uploaded yet. Upload your PDF documents in the <strong>Documents</strong> tab to begin multi-document chat.</span>
+            <span>Please upload your document in the <strong>Documents</strong> tab to begin.</span>
           </div>
           <button onclick="App.setTab('files')" class="px-3 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs shadow-sm transition-colors shrink-0">
-            Upload Documents
+            Upload Document
           </button>
         </div>
       `;
@@ -171,7 +172,7 @@ const App = (() => {
       const sendBtn = document.getElementById("send-btn");
       if (queryInput && sendBtn) {
         queryInput.disabled = true;
-        queryInput.placeholder = "Upload documents to begin asking questions...";
+        queryInput.placeholder = "Please upload your document to begin asking questions...";
         sendBtn.disabled = true;
       }
       return;
@@ -201,7 +202,7 @@ const App = (() => {
           </span>
           <div class="truncate flex-1">
             <div class="font-bold text-slate-800 dark:text-slate-100 mb-1">
-              Multi-Document Knowledge Base (${readyFiles.length}/${files.length} ready)
+              Documents (${readyFiles.length}/${files.length} ready)
             </div>
             <div class="flex flex-wrap gap-1">
               ${filePills}
@@ -223,11 +224,11 @@ const App = (() => {
     if (queryInput && sendBtn) {
       if (!isReady) {
         queryInput.disabled = true;
-        queryInput.placeholder = `Documents are processing... Please wait until at least one document is Ready.`;
+        queryInput.placeholder = `Documents are processing... Please wait until ready.`;
         sendBtn.disabled = true;
       } else {
         queryInput.disabled = false;
-        queryInput.placeholder = `Ask anything across your ${readyFiles.length} document(s) (relational concepts, comparisons, synthesis)...`;
+        queryInput.placeholder = `Ask anything about your document${readyFiles.length > 1 ? "s" : ""}...`;
         sendBtn.disabled = false;
       }
     }
@@ -267,9 +268,13 @@ const App = (() => {
     if (!container) return;
 
     const messages = State.getActiveChatHistory();
+    const files = State.files;
     const readyFiles = State.readyFiles;
 
     if (messages.length === 0) {
+      const hasFiles = files.length > 0;
+      const hasReady = readyFiles.length > 0;
+
       container.innerHTML = `
         <div class="h-full flex flex-col items-center justify-center p-8 text-center text-slate-400">
           <div class="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 shadow-inner">
@@ -278,29 +283,37 @@ const App = (() => {
             </svg>
           </div>
           <h3 class="text-base font-bold text-slate-700 dark:text-slate-200 mb-1">
-            ${readyFiles.length > 0 ? `Multi-Document Q&A Chat (${readyFiles.length} document${readyFiles.length > 1 ? "s" : ""} ready)` : "Start by uploading documents"}
+            ${!hasFiles
+              ? "Please upload your document"
+              : hasReady
+              ? `Q&A Chat (${readyFiles.length} document${readyFiles.length > 1 ? "s" : ""} ready)`
+              : "Processing documents..."}
           </h3>
           <p class="text-xs text-slate-400 max-w-sm mb-6">
-            Answers are synthesized across all your uploaded documents with exact citations, filename, and page numbers.
+            ${!hasFiles
+              ? "Upload your document to begin asking questions and getting answers with exact citations."
+              : hasReady
+              ? "Answers are synthesized with exact citations, filename, and page numbers."
+              : "Your document is currently being processed. It will be ready shortly."}
           </p>
 
-          ${readyFiles.length > 0
+          ${hasReady
           ? `
             <div class="flex flex-wrap justify-center gap-2 max-w-lg">
-              <button onclick="App.suggestQuestion('Summarize the key points across the documents')" class="text-xs px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-600 dark:text-slate-300 transition-colors shadow-sm">
-                💡 "Summarize key points across documents"
+              <button onclick="App.suggestQuestion('Summarize the key points')" class="text-xs px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-600 dark:text-slate-300 transition-colors shadow-sm">
+                💡 "Summarize the key points"
               </button>
-              <button onclick="App.suggestQuestion('Compare and contrast the findings between the documents')" class="text-xs px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-600 dark:text-slate-300 transition-colors shadow-sm">
-                💡 "Compare and contrast findings"
+              <button onclick="App.suggestQuestion('What are the main findings?')" class="text-xs px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-600 dark:text-slate-300 transition-colors shadow-sm">
+                💡 "What are the main findings?"
               </button>
-              <button onclick="App.suggestQuestion('What are the common themes or differences discussed?')" class="text-xs px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-600 dark:text-slate-300 transition-colors shadow-sm">
-                💡 "Common themes or differences"
+              <button onclick="App.suggestQuestion('What are the key takeaways?')" class="text-xs px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-600 dark:text-slate-300 transition-colors shadow-sm">
+                💡 "What are the key takeaways?"
               </button>
             </div>
           `
           : `
             <button onclick="App.setTab('files')" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-sm transition-colors">
-              Upload Documents Now
+              Please Upload Your Document
             </button>
           `
         }
@@ -392,7 +405,7 @@ const App = (() => {
       } else if (result.answer_source === "llm") {
         telemetry += ` · 🤖 General AI Knowledge`;
       } else if (result.sources && result.sources.length > 0) {
-        telemetry += ` · 📄 Multi-Document Grounded (${result.sources.length} sources, Top: ${(result.sources[0].score * 100).toFixed(0)}%)`;
+        telemetry += ` · 📄 Grounded (${result.sources.length} source${result.sources.length === 1 ? "" : "s"}, Top: ${(result.sources[0].score * 100).toFixed(0)}%)`;
       }
 
       // Remove loading indicator

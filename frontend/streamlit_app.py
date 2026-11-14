@@ -101,7 +101,7 @@ with st.sidebar:
         st.write("No documents uploaded yet.")
 
 # Main Tabs: Q&A Chat and Performance Analytics
-tab_chat, tab_perf = st.tabs(["💬 Multi-Document Chat", "📊 Performance Analytics"])
+tab_chat, tab_perf = st.tabs(["💬 Chat", "📊 Performance Analytics"])
 
 # TAB 1: Chat (Single unified chat across all uploaded documents)
 with tab_chat:
