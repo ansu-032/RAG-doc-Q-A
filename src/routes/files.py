@@ -31,6 +31,38 @@ async def upload_file(
     return record
 
 
+@router.post(
+    "/files", response_model=list[FileOut], status_code=201, dependencies=[Depends(rate_limit.limit_uploads)]
+)
+async def upload_files(
+    files: list[UploadFile],
+    background_tasks: BackgroundTasks,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    session_id: uuid.UUID | None = Depends(get_session_id),
+):
+    session_id = await sessions.ensure_session(db, session_id)
+    sessions.set_cookie(response, session_id)
+    await scheduler.touch(session_id)
+    records = []
+    for file in files:
+        record = await file_service.upload_file(db, file, session_id)
+        background_tasks.add_task(processing.process_file, record.id, session_id)
+        records.append(record)
+    await scheduler.refresh()
+    return records
+
+
+@router.get("/files", response_model=list[FileOut])
+async def list_files(
+    db: AsyncSession = Depends(get_db),
+    session_id: uuid.UUID | None = Depends(get_session_id),
+):
+    if session_id is None:
+        return []
+    return await file_service.list_files(db, session_id)
+
+
 @router.get("/file/{file_id}", response_model=FileOut)
 async def get_file_info(
     file_id: uuid.UUID,

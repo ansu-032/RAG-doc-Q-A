@@ -24,6 +24,9 @@ class Source(BaseModel):
     chunk_index: int
     score: float
     content: str
+    file_id: uuid.UUID | None = None
+    filename: str | None = None
+    page_number: int | None = None
 
 
 class WebSource(BaseModel):
@@ -34,8 +37,9 @@ class WebSource(BaseModel):
 
 
 class QueryOut(BaseModel):
-    file_id: uuid.UUID
-    filename: str
+    file_id: uuid.UUID | None = None
+    filename: str | None = None
+    files_searched: list[str] = Field(default_factory=list)
     question: str
     # What the router decided, and the question as it rewrote it (used for search and answering).
     route: Literal["document_specific", "document_broad", "general"]

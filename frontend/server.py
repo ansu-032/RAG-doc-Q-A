@@ -19,7 +19,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -29,9 +29,11 @@ class FrontendProxyHandler(http.server.SimpleHTTPRequestHandler):
 
     def end_headers(self):
         # Enable CORS for all local requests
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = self.headers.get("Origin") or "*"
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Access-Control-Allow-Credentials", "true")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key, Cookie")
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         super().end_headers()
 
@@ -77,14 +79,14 @@ class FrontendProxyHandler(http.server.SimpleHTTPRequestHandler):
             with urllib.request.urlopen(req, timeout=120) as resp:
                 self.send_response(resp.status)
                 for key, val in resp.headers.items():
-                    if key.lower() not in ("transfer-encoding", "content-encoding", "access-control-allow-origin"):
+                    if key.lower() not in ("transfer-encoding", "content-encoding", "access-control-allow-origin", "access-control-allow-credentials"):
                         self.send_header(key, val)
                 self.end_headers()
                 self.wfile.write(resp.read())
         except urllib.error.HTTPError as e:
             self.send_response(e.code)
             for key, val in e.headers.items():
-                if key.lower() not in ("transfer-encoding", "content-encoding", "access-control-allow-origin"):
+                if key.lower() not in ("transfer-encoding", "content-encoding", "access-control-allow-origin", "access-control-allow-credentials"):
                     self.send_header(key, val)
             self.end_headers()
             self.wfile.write(e.read())
@@ -99,7 +101,7 @@ class FrontendProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(error_json.encode("utf-8"))
 
 
-def run(port: int = 3000, backend: str = "http://localhost:8000"):
+def run(port: int = 3000, backend: str = "http://127.0.0.1:8000"):
     global BACKEND_URL
     BACKEND_URL = backend.rstrip("/")
     mimetypes.init()
@@ -123,7 +125,7 @@ def run(port: int = 3000, backend: str = "http://localhost:8000"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Serve the Citely frontend")
     parser.add_argument("--port", type=int, default=3000, help="Port to serve on (default: 3000)")
-    parser.add_argument("--backend", type=str, default="http://localhost:8000", help="FastAPI backend URL")
+    parser.add_argument("--backend", type=str, default="http://127.0.0.1:8000", help="FastAPI backend URL")
     args = parser.parse_args()
     run(port=args.port, backend=args.backend)
 

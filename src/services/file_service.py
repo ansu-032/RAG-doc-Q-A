@@ -4,6 +4,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
@@ -84,3 +85,13 @@ async def delete_file(db: AsyncSession, file_id: uuid.UUID, session_id: uuid.UUI
     await db.delete(record)
     await db.commit()
     logger.info("Deleted file %s with its chunks, session=%s", file_id, short_id(session_id))
+
+
+async def list_files(db: AsyncSession, session_id: uuid.UUID) -> list[UploadedFile]:
+    stmt = (
+        select(UploadedFile)
+        .where(UploadedFile.session_id == session_id)
+        .order_by(UploadedFile.uploaded_at.desc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
