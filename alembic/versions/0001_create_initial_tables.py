@@ -61,11 +61,8 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("chunk_index", sa.Integer(), nullable=False),
-        sa.Column("page_number", sa.Integer(), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
-        sa.Column("char_count", sa.Integer(), nullable=False),
-        sa.Column("word_count", sa.Integer(), nullable=False),
-        sa.Column("embedding", Vector(EMBEDDING_DIM), nullable=False),
+        sa.Column("embedding", Vector(EMBEDDING_DIM), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.UniqueConstraint("file_id", "chunk_index"),
     )

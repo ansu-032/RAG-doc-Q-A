@@ -40,6 +40,21 @@ def uuid_pk() -> Mapped[uuid.UUID]:
     )
 
 
+class UserSession(Base):
+    """An anonymous browser session: it owns files, and has its own idle timer for cleanup."""
+
+    __tablename__ = "user_sessions"
+    __table_args__ = (Index("user_sessions_last_activity_idx", "last_activity_at"),)
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    last_activity_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 class UploadedFile(Base):
     """An uploaded file: its details and where it lives in MinIO."""
 
@@ -47,9 +62,13 @@ class UploadedFile(Base):
     __table_args__ = (
         UniqueConstraint("minio_bucket", "minio_object_key"),
         Index("uploaded_files_checksum_idx", "sha256_checksum"),
+        Index("uploaded_files_session_id_idx", "session_id"),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user_sessions.id", name="uploaded_files_session_id_fkey")
+    )
     original_filename: Mapped[str] = mapped_column(Text)
     mime_type: Mapped[str] = mapped_column(Text)
     file_extension: Mapped[str | None] = mapped_column(Text)
@@ -99,11 +118,10 @@ class DocumentChunk(Base):
         UUID(as_uuid=True), ForeignKey("uploaded_files.id", ondelete="CASCADE")
     )
     chunk_index: Mapped[int] = mapped_column(Integer)
-    page_number: Mapped[int] = mapped_column(Integer)
+    page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     content: Mapped[str] = mapped_column(Text)
-    char_count: Mapped[int] = mapped_column(Integer)
-    word_count: Mapped[int] = mapped_column(Integer)
-    embedding = mapped_column(Vector(EMBEDDING_DIM), nullable=False)
+    # NULL until the embedding step fills it in.
+    embedding = mapped_column(Vector(EMBEDDING_DIM), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

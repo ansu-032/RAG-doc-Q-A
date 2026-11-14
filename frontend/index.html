@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citely | Grounded Intelligence</title>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-sans h-[100dvh] overflow-hidden flex flex-col transition-colors duration-200">
+
+  <!-- Top App Navigation Bar -->
+  <header class="shrink-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 glass-panel">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <span class="font-extrabold text-base tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+            Citely
+          </span>
+          <span class="block text-[11px] text-slate-500 dark:text-slate-400">Grounded semantic search &amp; observability</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden sm:flex items-center gap-1 h-full">
+        <button type="button" data-tab="chat" onclick="App.setTab('chat')" class="tab-btn active inline-flex items-center gap-2 px-3.5 h-full text-xs font-semibold border-b-2 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          Q&amp;A Chat
+        </button>
+
+        <button type="button" data-tab="files" onclick="App.setTab('files')" class="tab-btn inline-flex items-center gap-2 px-3.5 h-full text-xs font-semibold border-b-2 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Documents
+          <span id="file-count-badge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">0</span>
+        </button>
+
+        <button type="button" data-tab="performance" onclick="App.setTab('performance')" class="tab-btn inline-flex items-center gap-2 px-3.5 h-full text-xs font-semibold border-b-2 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Performance Analytics
+        </button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-2.5">
+        <!-- Backend Status Pill -->
+        <div id="backend-status-pill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+          <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+          <span class="text-xs font-medium text-slate-500">Connecting...</span>
+        </div>
+
+        <!-- Settings Modal Trigger -->
+        <button type="button" onclick="App.openSettings()" class="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="API Configuration">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle-btn" type="button" class="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Toggle Theme">
+          <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Subnav Bar -->
+    <div class="sm:hidden flex border-t border-slate-200 dark:border-slate-800 px-4 h-11 bg-white dark:bg-slate-900 justify-around">
+      <button onclick="App.setTab('chat')" data-tab="chat" class="tab-btn active text-xs font-semibold flex items-center gap-1.5 px-3 border-b-2">
+        Q&amp;A Chat
+      </button>
+      <button onclick="App.setTab('files')" data-tab="files" class="tab-btn text-xs font-semibold flex items-center gap-1.5 px-3 border-b-2">
+        Documents
+      </button>
+      <button onclick="App.setTab('performance')" data-tab="performance" class="tab-btn text-xs font-semibold flex items-center gap-1.5 px-3 border-b-2">
+        Analytics
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 min-h-0 overflow-y-auto max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: Q&A CHAT INTERFACE                  -->
+    <!-- ========================================== -->
+    <section id="tab-pane-chat" class="tab-pane flex-1 min-h-0 flex flex-col space-y-3">
+      <!-- Active Document Banner -->
+      <div id="active-file-banner"></div>
+
+      <!-- Chat Container -->
+      <div class="flex-1 flex flex-col bg-slate-100/60 dark:bg-slate-900/40 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden min-h-[320px]">
+        
+        <!-- Chat Header Actions -->
+        <div class="px-4 py-2.5 bg-white/70 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 text-slate-500">
+            <svg class="w-3.5 h-3.5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-medium text-slate-700 dark:text-slate-300">Grounded Conversation</span>
+          </div>
+
+          <button id="clear-chat-btn" type="button" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1" title="Clear current conversation">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>Clear Chat</span>
+          </button>
+        </div>
+
+        <!-- Chat Messages Scroll Area -->
+        <div id="chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-2"></div>
+
+        <!-- Query Input Bar -->
+        <div class="p-3 sm:p-4 bg-white/80 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800">
+          <div class="flex items-end gap-2.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 p-2 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all shadow-inner">
+            <textarea
+              id="query-input"
+              rows="1"
+              placeholder="Ask anything about the document... (Press Enter to submit)"
+              class="flex-1 bg-transparent border-0 resize-none outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 max-h-36 py-1.5 px-2"
+            ></textarea>
+            
+            <button
+              id="send-btn"
+              type="button"
+              class="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold transition-all shadow-md shadow-indigo-600/20 shrink-0"
+              title="Submit Query"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+          </div>
+          <div class="flex items-center justify-end text-[11px] text-slate-400 mt-2 px-1">
+            <span>Shift + Enter for new line</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 text-center">AI can make mistakes.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: DOCUMENTS MANAGER                   -->
+    <!-- ========================================== -->
+    <section id="tab-pane-files" class="tab-pane hidden flex-1 flex flex-col space-y-6">
+      
+      <!-- Upload Dropzone -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">Upload New Document</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Supported formats: <strong>PDF</strong>, <strong>DOCX</strong> (with tables), and <strong>Markdown</strong>. Multiple documents can be selected. Your document is processed in the background.
+        </p>
+
+        <div
+          id="file-dropzone"
+          class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 rounded-2xl p-8 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-950/30 group"
+        >
+          <input type="file" id="file-input" class="hidden" multiple accept=".pdf,.docx,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown" />
+          
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+          <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Click to upload or drag &amp; drop document here
+          </p>
+          <p class="text-xs text-slate-400 mt-1">
+            Max upload size: 25 MB
+          </p>
+        </div>
+
+        <div id="upload-status" class="hidden mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"></div>
+      </div>
+
+      <!-- Uploaded Documents Grid -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Your Documents</h3>
+          <span class="text-xs text-slate-400">Click "Chat with this File" to set active document</span>
+        </div>
+        <div id="files-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: PERFORMANCE ANALYTICS               -->
+    <!-- ========================================== -->
+    <section id="tab-pane-performance" class="tab-pane hidden flex-1 flex flex-col items-center justify-center text-center gap-2 py-16">
+      <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">Under development</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Performance Analytics isn't available yet.</p>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- SETTINGS MODAL                             -->
+  <!-- ========================================== -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">API Configuration</h3>
+        <button onclick="App.closeSettings()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="py-4 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Backend API Base URL</label>
+          <input
+            id="settings-base-url"
+            type="text"
+            class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-xs outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            placeholder="/api/v1 or http://localhost:8000/api/v1"
+          />
+          <p class="text-slate-400 mt-1">Default <code>/api/v1</code> proxies seamlessly via the frontend server.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button onclick="App.resetSettings()" class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-rose-600 dark:text-rose-400 transition-colors">
+          Reset Default
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="App.closeSettings()" class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 transition-colors">
+            Cancel
+          </button>
+          <button onclick="App.saveSettings()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-colors">
+            Save Settings
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
+
